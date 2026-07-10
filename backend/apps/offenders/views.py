@@ -10,11 +10,13 @@ from rest_framework.response import Response
 from apps.core.permissions import HasPermission, granular_permissions, view_manage_permissions
 from apps.geography.models import District, PoliceStation
 
+from .bulk_upload_rules import (
+    BULK_UPLOAD_REQUIRED_FIELDS,
+    BULK_UPLOAD_TRUE_VALUES,
+    parse_bulk_upload_dates,
+)
 from .models import Offender, ParoleCondition, ParoleIncident
 from .serializers import OffenderSerializer, ParoleConditionSerializer, ParoleIncidentSerializer
-
-BULK_UPLOAD_REQUIRED_FIELDS = ["name", "district", "police_station", "latitude", "longitude"]
-BULK_UPLOAD_TRUE_VALUES = {"true", "1", "yes", "y"}
 
 
 class OffenderViewSet(viewsets.ModelViewSet):
@@ -103,13 +105,18 @@ class OffenderViewSet(viewsets.ModelViewSet):
                 errors.append({"row": row_index, "errors": row_errors})
                 continue
 
+            parsed_dates, date_errors = parse_bulk_upload_dates(row)
+            if date_errors:
+                errors.append({"row": row_index, "errors": date_errors})
+                continue
+
             payload = {
                 "name": row["name"],
                 "aliases": row.get("aliases", ""),
-                "date_of_birth": row.get("date_of_birth") or None,
+                "date_of_birth": parsed_dates["date_of_birth"],
                 "mobile_no": row.get("mobile_no", ""),
                 "present_address": row.get("present_address", ""),
-                "date_of_last_arrest": row.get("date_of_last_arrest") or None,
+                "date_of_last_arrest": parsed_dates["date_of_last_arrest"],
                 "district": district.id,
                 "police_station": police_station.id,
                 "latitude": row["latitude"],
@@ -124,8 +131,8 @@ class OffenderViewSet(viewsets.ModelViewSet):
                 "conviction_summary": row.get("conviction_summary", ""),
                 "sentence_years": row.get("sentence_years") or None,
                 "years_served": row.get("years_served") or None,
-                "parole_granted_date": row.get("parole_granted_date") or None,
-                "parole_end_date": row.get("parole_end_date") or None,
+                "parole_granted_date": parsed_dates["parole_granted_date"],
+                "parole_end_date": parsed_dates["parole_end_date"],
             }
 
             serializer = OffenderSerializer(data=payload)

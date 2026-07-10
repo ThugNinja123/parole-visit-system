@@ -6,6 +6,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AuthProvider } from "@/context/AuthContext";
 import { LoginPage } from "@/features/auth/LoginPage";
 import { DashboardPage } from "@/features/dashboard/DashboardPage";
+import { GeographyPage } from "@/features/geography/GeographyPage";
 import { OffenderDetailPage } from "@/features/offenders/OffenderDetailPage";
 import { OffendersListPage } from "@/features/offenders/OffendersListPage";
 import { RolesAccessPage } from "@/features/roles/RolesAccessPage";
@@ -75,6 +76,14 @@ export default function App() {
                 element={
                   <ProtectedRoute requirePermission="role.view">
                     <RolesAccessPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="geography"
+                element={
+                  <ProtectedRoute requirePermission="geography.manage">
+                    <GeographyPage />
                   </ProtectedRoute>
                 }
               />

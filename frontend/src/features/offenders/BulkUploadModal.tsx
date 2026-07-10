@@ -5,57 +5,13 @@ import { useRef, useState } from "react";
 import { bulkUploadOffenders } from "@/api/offenders";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
+import {
+  BULK_UPLOAD_DATE_FIELDS,
+  BULK_UPLOAD_DATE_FORMAT,
+  TEMPLATE_COLUMNS,
+  TEMPLATE_EXAMPLE_ROW,
+} from "@/features/offenders/bulkUploadRules";
 import type { BulkUploadResult } from "@/types";
-
-const TEMPLATE_COLUMNS = [
-  "name",
-  "aliases",
-  "date_of_birth",
-  "mobile_no",
-  "present_address",
-  "date_of_last_arrest",
-  "district",
-  "police_station",
-  "latitude",
-  "longitude",
-  "parole_status",
-  "case_number",
-  "gps_monitor_enabled",
-  "height",
-  "weight",
-  "eye_color",
-  "employer_name",
-  "conviction_summary",
-  "sentence_years",
-  "years_served",
-  "parole_granted_date",
-  "parole_end_date",
-];
-
-const TEMPLATE_EXAMPLE_ROW = [
-  "John Doe",
-  "Johnny",
-  "1985-04-12",
-  "+1-555-0100",
-  "123 Main St, Springfield",
-  "2024-01-15",
-  "Springfield District",
-  "Springfield Central",
-  "39.7817",
-  "-89.6501",
-  "active",
-  "P-10234",
-  "false",
-  `5' 10"`,
-  "180 lbs",
-  "brown",
-  "Acme Corp",
-  "Aggravated Assault (Felony Class B)",
-  "5",
-  "2",
-  "2024-02-01",
-  "2029-02-01",
-];
 
 function csvEscape(value: string): string {
   if (/[",\n]/.test(value)) {
@@ -123,6 +79,8 @@ export function BulkUploadModal({ onClose }: { onClose: () => void }) {
         <p className="text-sm text-on-surface-variant">
           Upload a CSV file to register multiple offenders at once. Each row is validated
           independently, so a mistake in one row won't block the rest from being imported.
+          Date fields ({BULK_UPLOAD_DATE_FIELDS.map((f) => f.replace(/_/g, " ")).join(", ")}) must use{" "}
+          {BULK_UPLOAD_DATE_FORMAT}.
         </p>
 
         <div className="flex items-center justify-between rounded border border-outline-variant bg-surface-container-low px-4 py-3">

@@ -2,6 +2,8 @@ export interface District {
   id: number;
   name: string;
   code: string;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 export interface PoliceStation {
@@ -10,6 +12,8 @@ export interface PoliceStation {
   district_name: string;
   name: string;
   code: string;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 export interface Permission {

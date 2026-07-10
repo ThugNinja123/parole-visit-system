@@ -61,3 +61,46 @@ export function ShieldIcon({ className }: IconProps) {
     </svg>
   );
 }
+
+export function MapPinIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 16 20" fill="none" aria-hidden>
+      <path
+        d="M8 19s6.5-6.9 6.5-12A6.5 6.5 0 0 0 1.5 7c0 5.1 6.5 12 6.5 12z"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
+      <circle cx="8" cy="7" r="2.6" stroke="currentColor" strokeWidth="1.4" />
+    </svg>
+  );
+}
+
+export function PersonIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="none" aria-hidden>
+      <circle cx="10" cy="6.5" r="3.2" stroke="currentColor" strokeWidth="1.4" />
+      <path
+        d="M3.5 17.5c0-3.6 2.9-5.5 6.5-5.5s6.5 1.9 6.5 5.5"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+export function CaseFileIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="none" aria-hidden>
+      <path
+        d="M5 3.5h7l3 3v11.5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1z"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
+      <path d="M12 3.5V7h3" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+      <path d="M7 11h6M7 14h4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  );
+}

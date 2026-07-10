@@ -2,7 +2,7 @@ import type { ComponentType } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 
 import { HeaderBar } from "@/components/HeaderBar";
-import { DashboardIcon, DirectoryIcon, FieldVisitIcon, ScheduleIcon, ShieldIcon } from "@/components/NavIcons";
+import { DashboardIcon, DirectoryIcon, FieldVisitIcon, MapPinIcon, ScheduleIcon, ShieldIcon } from "@/components/NavIcons";
 import { useAuth } from "@/hooks/useAuth";
 import { usePermissions } from "@/hooks/usePermissions";
 
@@ -19,6 +19,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/visits", label: "Visit Schedules", icon: ScheduleIcon, permission: "visit.view" },
   { to: "/my-visits", label: "My Visits", icon: FieldVisitIcon, permission: "visit.submit" },
   { to: "/roles", label: "Roles & Access", icon: ShieldIcon, permission: "role.view" },
+  { to: "/geography", label: "Districts & Stations", icon: MapPinIcon, permission: "geography.manage" },
 ];
 
 export function AppLayout() {
