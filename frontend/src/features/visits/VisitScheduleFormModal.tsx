@@ -77,8 +77,27 @@ export function VisitScheduleFormModal({
   const isRepeating = (form.recurrence ?? "once") !== "once";
 
   return (
-    <Modal title="Schedule a visit" onClose={onClose} xl={true}>
+    <Modal
+      title="Schedule a visit"
+      onClose={onClose}
+      xl={true}
+      footer={
+        <>
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" form="visit-schedule-form" disabled={isSubmitting}>
+            {isSubmitting
+              ? "Saving..."
+              : previewDates.length > 1
+                ? `Schedule ${previewDates.length} visits`
+                : "Schedule visit"}
+          </Button>
+        </>
+      }
+    >
       <form
+        id="visit-schedule-form"
         onSubmit={(e) => {
           e.preventDefault();
           const payload: VisitScheduleInput = {
@@ -204,18 +223,6 @@ export function VisitScheduleFormModal({
             onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
           />
         </FormField>
-        <div className="flex justify-end gap-2 pt-2">
-          <Button type="button" variant="secondary" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting
-              ? "Saving..."
-              : previewDates.length > 1
-                ? `Schedule ${previewDates.length} visits`
-                : "Schedule visit"}
-          </Button>
-        </div>
       </form>
     </Modal>
   );

@@ -126,7 +126,32 @@ export function BulkUploadModal({ onClose }: { onClose: () => void }) {
   );
 
   return (
-    <Modal title="Bulk upload offenders" onClose={onClose} wide>
+    <Modal
+      title="Bulk upload offenders"
+      onClose={onClose}
+      wide
+      footer={
+        result ? (
+          <>
+            <Button type="button" variant="secondary" onClick={reset}>
+              Upload another file
+            </Button>
+            <Button type="button" onClick={onClose}>
+              Done
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button type="button" variant="secondary" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="button" disabled={!file || uploadMutation.isPending} onClick={handleUpload}>
+              {uploadMutation.isPending ? "Uploading..." : "Upload"}
+            </Button>
+          </>
+        )
+      }
+    >
       <div className="space-y-4">
         <p className="text-sm text-on-surface-variant">
           Upload a CSV file to register multiple offenders at once. Each row is validated
@@ -157,14 +182,6 @@ export function BulkUploadModal({ onClose }: { onClose: () => void }) {
               className="block w-full text-sm text-on-surface-variant file:mr-3 file:rounded file:border-0 file:bg-primary file:px-3.5 file:py-2 file:text-sm file:font-medium file:text-on-primary hover:file:opacity-90"
             />
             {error && <p className="text-sm text-error">{error}</p>}
-            <div className="flex justify-end gap-2 pt-2">
-              <Button type="button" variant="secondary" onClick={onClose}>
-                Cancel
-              </Button>
-              <Button type="button" disabled={!file || uploadMutation.isPending} onClick={handleUpload}>
-                {uploadMutation.isPending ? "Uploading..." : "Upload"}
-              </Button>
-            </div>
           </div>
         )}
 
@@ -195,15 +212,6 @@ export function BulkUploadModal({ onClose }: { onClose: () => void }) {
                 />
               </div>
             )}
-
-            <div className="flex justify-end gap-2 pt-2">
-              <Button type="button" variant="secondary" onClick={reset}>
-                Upload another file
-              </Button>
-              <Button type="button" onClick={onClose}>
-                Done
-              </Button>
-            </div>
           </div>
         )}
       </div>

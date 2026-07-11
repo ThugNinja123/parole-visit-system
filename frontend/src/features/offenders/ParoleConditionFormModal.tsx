@@ -24,8 +24,22 @@ export function ParoleConditionFormModal({
   });
 
   return (
-    <Modal title="Add parole condition" onClose={onClose}>
+    <Modal
+      title="Add parole condition"
+      onClose={onClose}
+      footer={
+        <>
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" form="parole-condition-form" disabled={isSubmitting}>
+            {isSubmitting ? "Saving..." : "Add condition"}
+          </Button>
+        </>
+      }
+    >
       <form
+        id="parole-condition-form"
         onSubmit={(e) => {
           e.preventDefault();
           onSubmit(form);
@@ -57,14 +71,6 @@ export function ParoleConditionFormModal({
           />
           Currently in violation (highlights this condition in red)
         </label>
-        <div className="flex justify-end gap-2 pt-2">
-          <Button type="button" variant="secondary" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Saving..." : "Add condition"}
-          </Button>
-        </div>
       </form>
     </Modal>
   );

@@ -10,6 +10,7 @@ import {
   type RefObject,
 } from "react";
 
+import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 
 type MenuContextValue = {
@@ -44,8 +45,10 @@ export function DropdownMenuTrigger({
   const { panelRef } = useDropdownMenu();
 
   return (
-    <button
+    <Button
       type="button"
+      variant="ghost"
+      size="icon"
       className={className}
       {...props}
       onClick={(e: MouseEvent<HTMLButtonElement>) => {
@@ -54,7 +57,7 @@ export function DropdownMenuTrigger({
       }}
     >
       {children}
-    </button>
+    </Button>
   );
 }
 
@@ -119,9 +122,10 @@ export function DropdownMenuItem({
   }
 
   return (
-    <button
+    <Button
       type="button"
-      className={classes}
+      variant="ghost"
+      className={cn(classes, "h-auto w-full justify-start rounded-none")}
       {...props}
       onClick={(e) => {
         onClick?.(e);
@@ -129,6 +133,6 @@ export function DropdownMenuItem({
       }}
     >
       {children}
-    </button>
+    </Button>
   );
 }

@@ -2,6 +2,8 @@ import L from "leaflet";
 import { useEffect, useRef, useState } from "react";
 import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from "react-leaflet";
 
+import { Button } from "@/components/ui/Button";
+
 import "leaflet/dist/leaflet.css";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
@@ -120,13 +122,14 @@ export function LocationPicker({
           <ul className="absolute z-[1001] mt-1 max-h-56 w-full overflow-y-auto rounded border border-outline-variant bg-surface-container-lowest shadow-lg">
             {results.map((result, idx) => (
               <li key={`${result.lat}-${result.lon}-${idx}`}>
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
                   onClick={() => selectResult(result)}
-                  className="block w-full px-3 py-2 text-left text-sm text-on-surface hover:bg-surface-container-low"
+                  className="h-auto w-full justify-start rounded-none px-3 py-2 text-left text-sm font-normal text-on-surface"
                 >
                   {result.display_name}
-                </button>
+                </Button>
               </li>
             ))}
           </ul>

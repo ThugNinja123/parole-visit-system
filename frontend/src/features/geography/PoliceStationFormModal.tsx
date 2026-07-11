@@ -28,8 +28,23 @@ export function PoliceStationFormModal({
   const [longitude, setLongitude] = useState<number | null>(initial?.longitude ?? null);
 
   return (
-    <Modal title={initial ? "Edit police station" : "Create police station"} onClose={onClose} wide>
+    <Modal
+      title={initial ? "Edit police station" : "Create police station"}
+      onClose={onClose}
+      wide
+      footer={
+        <>
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" form="police-station-form" disabled={isSubmitting}>
+            {isSubmitting ? "Saving..." : "Save police station"}
+          </Button>
+        </>
+      }
+    >
       <form
+        id="police-station-form"
         onSubmit={(e) => {
           e.preventDefault();
           if (!district) return;
@@ -69,15 +84,6 @@ export function PoliceStationFormModal({
             }}
           />
         </FormField>
-
-        <div className="flex justify-end gap-2 pt-2">
-          <Button type="button" variant="secondary" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Saving..." : "Save police station"}
-          </Button>
-        </div>
       </form>
     </Modal>
   );

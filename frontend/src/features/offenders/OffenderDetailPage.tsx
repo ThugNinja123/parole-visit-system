@@ -401,17 +401,19 @@ export function OffenderDetailPage() {
 
       <div className="flex gap-1 border-b border-outline-variant">
         {TABS.map((t) => (
-          <button
+          <Button
             key={t.key}
+            type="button"
+            variant="ghost"
             onClick={() => setTab(t.key)}
-            className={`px-4 py-2 text-sm font-medium transition-colors ${
+            className={`rounded-none px-4 py-2 ${
               tab === t.key
-                ? "border-b-2 border-primary text-primary"
-                : "text-on-surface-variant hover:text-on-surface"
+                ? "border-b-2 border-primary text-primary hover:bg-transparent"
+                : "text-on-surface-variant"
             }`}
           >
             {t.label}
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -502,13 +504,16 @@ export function OffenderDetailPage() {
                           {condition.title}
                         </p>
                         <PermissionGate code="offender.edit">
-                          <button
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
                             onClick={() => deleteConditionMutation.mutate(condition.id)}
-                            className="text-xs text-outline hover:text-error"
+                            className="h-auto px-1 text-xs text-outline hover:text-error"
                             aria-label="Remove condition"
                           >
                             ✕
-                          </button>
+                          </Button>
                         </PermissionGate>
                       </div>
                       {condition.description && (
@@ -608,12 +613,15 @@ export function OffenderDetailPage() {
               <CardBody className="space-y-4">
                 <div className="flex items-center justify-between border-b border-outline-variant pb-2">
                   <h2 className="text-headline-md text-on-surface">Visit Logs</h2>
-                  <button
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setTab("visits")}
-                    className="text-xs font-medium text-primary hover:underline"
+                    className="h-auto px-0 text-xs font-medium text-primary hover:bg-transparent hover:underline"
                   >
                     View all
-                  </button>
+                  </Button>
                 </div>
                 <DataGrid<VisitRecord>
                   rowData={recentVisits}

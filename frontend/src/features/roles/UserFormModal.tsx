@@ -48,8 +48,23 @@ export function UserFormModal({
   }
 
   return (
-    <Modal title={initial ? "Edit user" : "Create user"} onClose={onClose} wide>
+    <Modal
+      title={initial ? "Edit user" : "Create user"}
+      onClose={onClose}
+      wide
+      footer={
+        <>
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" form="user-form" disabled={isSubmitting}>
+            {isSubmitting ? "Saving..." : "Save user"}
+          </Button>
+        </>
+      }
+    >
       <form
+        id="user-form"
         onSubmit={(e) => {
           e.preventDefault();
           onSubmit({
@@ -138,15 +153,6 @@ export function UserFormModal({
               </label>
             ))}
           </div>
-        </div>
-
-        <div className="flex justify-end gap-2 pt-2">
-          <Button type="button" variant="secondary" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Saving..." : "Save user"}
-          </Button>
         </div>
       </form>
     </Modal>

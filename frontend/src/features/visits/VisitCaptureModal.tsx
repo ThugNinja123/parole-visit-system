@@ -92,7 +92,12 @@ export function VisitCaptureModal({
 
   if (result) {
     return (
-      <Modal title="Visit submitted" onClose={onClose} wide={true}>
+      <Modal
+        title="Visit submitted"
+        onClose={onClose}
+        wide={true}
+        footer={<Button onClick={onClose} className="w-full">Done</Button>}
+      >
         <div className="space-y-3 text-center">
           <p className="text-sm text-on-surface-variant">
             Visit report for {schedule.offender_name} was recorded.
@@ -107,16 +112,27 @@ export function VisitCaptureModal({
               This visit was still recorded. A supervisor will review the location mismatch.
             </p>
           )}
-          <Button onClick={onClose} className="w-full">
-            Done
-          </Button>
         </div>
       </Modal>
     );
   }
 
   return (
-    <Modal title={`Record visit - ${schedule.offender_name}`} onClose={onClose} xl={true}>
+    <Modal
+      title={`Record visit - ${schedule.offender_name}`}
+      onClose={onClose}
+      xl={true}
+      footer={
+        <>
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="button" onClick={handleSubmit} disabled={!canSubmit}>
+            {isSubmitting ? "Submitting..." : "Submit visit report"}
+          </Button>
+        </>
+      }
+    >
       <div className="space-y-4">
         <FormField label="Visit type">
           <Select
@@ -133,9 +149,9 @@ export function VisitCaptureModal({
               <span className="font-data">
                 Captured: {geo.lat.toFixed(5)}, {geo.lng.toFixed(5)}
               </span>
-              <button type="button" onClick={captureLocation} className="text-xs underline">
+              <Button type="button" variant="ghost" size="sm" onClick={captureLocation} className="h-auto px-0 underline">
                 Retry
-              </button>
+              </Button>
             </div>
           ) : (
             <Button type="button" variant="secondary" onClick={captureLocation} className="w-full">
@@ -189,15 +205,6 @@ export function VisitCaptureModal({
         </FormField>
 
         {error && <p className="text-sm text-error">{error}</p>}
-
-        <div className="flex justify-end gap-2 pt-2">
-          <Button type="button" variant="secondary" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button type="button" onClick={handleSubmit} disabled={!canSubmit}>
-            {isSubmitting ? "Submitting..." : "Submit visit report"}
-          </Button>
-        </div>
       </div>
     </Modal>
   );

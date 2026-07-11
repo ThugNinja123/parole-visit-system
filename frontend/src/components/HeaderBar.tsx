@@ -3,6 +3,7 @@ import { type FormEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { PermissionGate } from "@/components/PermissionGate";
+import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/hooks/useAuth";
 
 function OfficerAvatar({ name }: { name: string }) {
@@ -17,9 +18,6 @@ function OfficerAvatar({ name }: { name: string }) {
     </div>
   );
 }
-
-const iconButtonClass =
-  "flex items-center justify-center rounded-xl px-2 py-2 text-on-surface transition-colors hover:bg-surface-container-low";
 
 export function HeaderBar() {
   const { user } = useAuth();
@@ -55,20 +53,28 @@ export function HeaderBar() {
       </form>
 
       <div className="flex items-center gap-4 pl-4">
-        <button type="button" className={iconButtonClass} aria-label="Notifications">
-          <Bell className="size-5 text-on-surface" aria-hidden />
-        </button>
-        <button type="button" className={iconButtonClass} aria-label="Settings">
-          <Settings className="size-5 text-on-surface" aria-hidden />
-        </button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="rounded-xl text-on-surface"
+          aria-label="Notifications"
+        >
+          <Bell className="size-5" aria-hidden />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="rounded-xl text-on-surface"
+          aria-label="Settings"
+        >
+          <Settings className="size-5" aria-hidden />
+        </Button>
         <PermissionGate code="visit.submit">
-          <button
-            type="button"
-            onClick={() => navigate("/my-visits")}
-            className="shrink-0 bg-primary px-4 py-2 text-label-md text-on-primary transition-opacity hover:opacity-90"
-          >
+          <Button type="button" onClick={() => navigate("/my-visits")}>
             Log Visit
-          </button>
+          </Button>
         </PermissionGate>
         <OfficerAvatar name={displayName} />
       </div>

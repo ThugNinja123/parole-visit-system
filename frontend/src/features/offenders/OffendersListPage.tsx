@@ -352,14 +352,15 @@ export function OffendersListPage() {
             ]}
           />
 
-          <button
+          <Button
             type="button"
+            variant="secondary"
             onClick={() => setShowMoreFilters((open) => !open)}
-            className="inline-flex items-center gap-2 border border-outline-variant bg-surface-container-lowest px-3 py-2 text-label-md text-on-surface transition-colors hover:bg-surface-container-low"
+            className="text-label-md"
           >
             <ListFilter className="h-3.5 w-3.5" aria-hidden />
             More Filters
-          </button>
+          </Button>
 
           <PermissionGate code="offender.create">
             <Button variant="secondary" onClick={() => setShowBulkUpload(true)}>
@@ -413,22 +414,26 @@ export function OffendersListPage() {
               : `Showing ${rangeStart} to ${rangeEnd} of ${total} entries`}
           </p>
           <div className="flex items-center gap-2">
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              size="sm"
               onClick={() => setPage((p) => p - 1)}
               disabled={!hasPrev}
-              className="border border-outline-variant bg-surface-container-lowest px-3 py-1.5 text-label-md text-on-surface-variant transition-colors enabled:hover:bg-surface-container-low disabled:opacity-50"
+              className="text-label-md text-on-surface-variant"
             >
               Prev
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="secondary"
+              size="sm"
               onClick={() => setPage((p) => p + 1)}
               disabled={!hasNext}
-              className="border border-outline-variant bg-surface-container-lowest px-3 py-1.5 text-label-md text-on-surface transition-colors enabled:hover:bg-surface-container-low disabled:opacity-50"
+              className="text-label-md"
             >
               Next
-            </button>
+            </Button>
           </div>
         </div>
       </div>

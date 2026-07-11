@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColDef, ICellRendererParams } from "ag-grid-community";
+import { Pencil, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { createRole, createUser, deleteRole, fetchRoles, fetchUsers, updateRole, updateUser } from "@/api/roles";
@@ -42,13 +43,24 @@ function RoleActionsRenderer({ data, context }: ICellRendererParams<Role, unknow
   if (!data) return null;
   return (
     <PermissionGate code="role.manage">
-      <div className="flex h-full items-center justify-end gap-2">
-        <Button variant="secondary" onClick={() => context.onEdit(data)}>
-          Edit
+      <div className="flex h-full items-center justify-end gap-1">
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={`Edit ${data.name}`}
+          onClick={() => context.onEdit(data)}
+        >
+          <Pencil className="h-4 w-4" aria-hidden />
         </Button>
         {!data.is_system && (
-          <Button variant="danger" onClick={() => context.onDelete(data.id)}>
-            Delete
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={`Delete ${data.name}`}
+            className="text-error hover:bg-error-container hover:text-on-error-container"
+            onClick={() => context.onDelete(data.id)}
+          >
+            <Trash2 className="h-4 w-4" aria-hidden />
           </Button>
         )}
       </div>
@@ -75,8 +87,13 @@ function UserActionsRenderer({ data, context }: ICellRendererParams<AppUser, unk
   return (
     <PermissionGate code="user.manage">
       <div className="flex h-full items-center justify-end">
-        <Button variant="secondary" onClick={() => context.onEdit(data)}>
-          Edit
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={`Edit ${data.username}`}
+          onClick={() => context.onEdit(data)}
+        >
+          <Pencil className="h-4 w-4" aria-hidden />
         </Button>
       </div>
     </PermissionGate>
@@ -182,17 +199,19 @@ export function RolesAccessPage() {
 
       <div className="flex gap-1 border-b border-outline-variant">
         {(["roles", "users"] as const).map((key) => (
-          <button
+          <Button
             key={key}
+            type="button"
+            variant="ghost"
             onClick={() => setTab(key)}
-            className={`px-4 py-2 text-sm font-medium capitalize transition-colors ${
+            className={`rounded-none px-4 py-2 capitalize ${
               tab === key
-                ? "border-b-2 border-primary text-primary"
-                : "text-on-surface-variant hover:text-on-surface"
+                ? "border-b-2 border-primary text-primary hover:bg-transparent"
+                : "text-on-surface-variant"
             }`}
           >
             {key}
-          </button>
+          </Button>
         ))}
       </div>
 

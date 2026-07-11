@@ -24,8 +24,23 @@ export function DistrictFormModal({
   const [longitude, setLongitude] = useState<number | null>(initial?.longitude ?? null);
 
   return (
-    <Modal title={initial ? "Edit district" : "Create district"} onClose={onClose} wide>
+    <Modal
+      title={initial ? "Edit district" : "Create district"}
+      onClose={onClose}
+      wide
+      footer={
+        <>
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" form="district-form" disabled={isSubmitting}>
+            {isSubmitting ? "Saving..." : "Save district"}
+          </Button>
+        </>
+      }
+    >
       <form
+        id="district-form"
         onSubmit={(e) => {
           e.preventDefault();
           onSubmit({ name, code: code || undefined, latitude, longitude });
@@ -51,15 +66,6 @@ export function DistrictFormModal({
             }}
           />
         </FormField>
-
-        <div className="flex justify-end gap-2 pt-2">
-          <Button type="button" variant="secondary" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Saving..." : "Save district"}
-          </Button>
-        </div>
       </form>
     </Modal>
   );

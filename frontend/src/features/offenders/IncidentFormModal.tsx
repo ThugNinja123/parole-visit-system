@@ -44,8 +44,22 @@ export function IncidentFormModal({
   });
 
   return (
-    <Modal title={title} onClose={onClose}>
+    <Modal
+      title={title}
+      onClose={onClose}
+      footer={
+        <>
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" form="incident-form" disabled={isSubmitting}>
+            {isSubmitting ? "Saving..." : "Save incident"}
+          </Button>
+        </>
+      }
+    >
       <form
+        id="incident-form"
         onSubmit={(e) => {
           e.preventDefault();
           onSubmit(form);
@@ -85,14 +99,6 @@ export function IncidentFormModal({
             onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
           />
         </FormField>
-        <div className="flex justify-end gap-2 pt-2">
-          <Button type="button" variant="secondary" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Saving..." : "Save incident"}
-          </Button>
-        </div>
       </form>
     </Modal>
   );

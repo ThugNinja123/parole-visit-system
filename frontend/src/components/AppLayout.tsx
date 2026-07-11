@@ -3,6 +3,7 @@ import type { ComponentType } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 
 import { HeaderBar } from "@/components/HeaderBar";
+import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/hooks/useAuth";
 import { usePermissions } from "@/hooks/usePermissions";
 
@@ -61,12 +62,14 @@ export function AppLayout() {
             </p>
             <p className="truncate text-label-md text-outline">{user?.role_names.join(", ") || "No role"}</p>
           </div>
-          <button
+          <Button
+            type="button"
+            // variant="ghost"
             onClick={logout}
-            className="w-full rounded px-3 py-2 text-left text-sm font-medium text-on-surface-variant hover:bg-surface-container-low"
+            className="w-full justify-start px-3 py-2 text-sm font-medium"
           >
             Log out
-          </button>
+          </Button>
         </div>
       </aside>
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">

@@ -32,8 +32,22 @@ export function InventoryFormModal({
   });
 
   return (
-    <Modal title="Add inventory / evidence item" onClose={onClose}>
+    <Modal
+      title="Add inventory / evidence item"
+      onClose={onClose}
+      footer={
+        <>
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" form="inventory-form" disabled={isSubmitting}>
+            {isSubmitting ? "Saving..." : "Add item"}
+          </Button>
+        </>
+      }
+    >
       <form
+        id="inventory-form"
         onSubmit={(e) => {
           e.preventDefault();
           onSubmit(form);
@@ -110,14 +124,6 @@ export function InventoryFormModal({
             ]}
           />
         </FormField>
-        <div className="flex justify-end gap-2 pt-2">
-          <Button type="button" variant="secondary" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Saving..." : "Add item"}
-          </Button>
-        </div>
       </form>
     </Modal>
   );

@@ -36,8 +36,23 @@ export function RoleFormModal({
   }
 
   return (
-    <Modal title={initial ? "Edit role" : "Create role"} onClose={onClose} wide>
+    <Modal
+      title={initial ? "Edit role" : "Create role"}
+      onClose={onClose}
+      wide
+      footer={
+        <>
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" form="role-form" disabled={isSubmitting}>
+            {isSubmitting ? "Saving..." : "Save role"}
+          </Button>
+        </>
+      }
+    >
       <form
+        id="role-form"
         onSubmit={(e) => {
           e.preventDefault();
           onSubmit({ name, description, permission_ids: Array.from(selected) });
@@ -80,15 +95,6 @@ export function RoleFormModal({
               </div>
             ))}
           </div>
-        </div>
-
-        <div className="flex justify-end gap-2 pt-2">
-          <Button type="button" variant="secondary" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Saving..." : "Save role"}
-          </Button>
         </div>
       </form>
     </Modal>

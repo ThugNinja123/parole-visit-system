@@ -38,8 +38,22 @@ export function CrimeFormModal({
   });
 
   return (
-    <Modal title="Add crime record" onClose={onClose}>
+    <Modal
+      title="Add crime record"
+      onClose={onClose}
+      footer={
+        <>
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" form="crime-form" disabled={isSubmitting}>
+            {isSubmitting ? "Saving..." : "Add crime"}
+          </Button>
+        </>
+      }
+    >
       <form
+        id="crime-form"
         onSubmit={(e) => {
           e.preventDefault();
           onSubmit(form);
@@ -74,14 +88,6 @@ export function CrimeFormModal({
             onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
           />
         </FormField>
-        <div className="flex justify-end gap-2 pt-2">
-          <Button type="button" variant="secondary" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Saving..." : "Add crime"}
-          </Button>
-        </div>
       </form>
     </Modal>
   );
