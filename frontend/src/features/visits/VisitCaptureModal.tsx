@@ -3,8 +3,13 @@ import { useState } from "react";
 import { submitVisitRecord, type SubmitVisitRecordInput } from "@/api/visits";
 import { Badge, locationStatusTone } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { FormField, Input, Select, Textarea } from "@/components/ui/Input";
+import { FormField, Input, Textarea } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import { Select } from "@/components/ui/Select";
+import {
+  buildVisitRemarks,
+  VISIT_REMARK_CHECKS,
+} from "@/features/visits/visitRemarkChecks";
 import type { VisitRecord, VisitSchedule, VisitType } from "@/types";
 
 type GeoState =
@@ -31,11 +36,21 @@ export function VisitCaptureModal({
 }) {
   const [geo, setGeo] = useState<GeoState>({ status: "idle" });
   const [visitType, setVisitType] = useState<VisitType>("field_home");
-  const [remarks, setRemarks] = useState("");
+  const [checkedRemarks, setCheckedRemarks] = useState<string[]>([]);
+  const [additionalNotes, setAdditionalNotes] = useState("");
   const [photo, setPhoto] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [result, setResult] = useState<VisitRecord | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const remarks = buildVisitRemarks(checkedRemarks, additionalNotes);
+  const canSubmit = geo.status === "ready" && checkedRemarks.length > 0 && !isSubmitting;
+
+  function toggleRemark(id: string) {
+    setCheckedRemarks((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  }
 
   function captureLocation() {
     if (!navigator.geolocation) {
@@ -52,7 +67,7 @@ export function VisitCaptureModal({
   }
 
   async function handleSubmit() {
-    if (geo.status !== "ready") return;
+    if (geo.status !== "ready" || checkedRemarks.length === 0) return;
     setIsSubmitting(true);
     setError(null);
     try {
@@ -77,7 +92,7 @@ export function VisitCaptureModal({
 
   if (result) {
     return (
-      <Modal title="Visit submitted" onClose={onClose}>
+      <Modal title="Visit submitted" onClose={onClose} wide={true}>
         <div className="space-y-3 text-center">
           <p className="text-sm text-on-surface-variant">
             Visit report for {schedule.offender_name} was recorded.
@@ -101,16 +116,15 @@ export function VisitCaptureModal({
   }
 
   return (
-    <Modal title={`Record visit - ${schedule.offender_name}`} onClose={onClose}>
+    <Modal title={`Record visit - ${schedule.offender_name}`} onClose={onClose} xl={true}>
       <div className="space-y-4">
         <FormField label="Visit type">
-          <Select value={visitType} onChange={(e) => setVisitType(e.target.value as VisitType)}>
-            {VISIT_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
-              </option>
-            ))}
-          </Select>
+          <Select
+            aria-label="Visit type"
+            value={visitType}
+            onValueChange={(v) => setVisitType(v as VisitType)}
+            options={VISIT_TYPES}
+          />
         </FormField>
 
         <FormField label="Your current location">
@@ -140,8 +154,38 @@ export function VisitCaptureModal({
           />
         </FormField>
 
-        <FormField label="Remarks" required>
-          <Textarea rows={3} value={remarks} onChange={(e) => setRemarks(e.target.value)} required />
+        <div>
+          <p className="mb-2 text-sm font-medium text-on-surface-variant">
+            Officer observations <span className="text-primary">*</span>
+          </p>
+          <div className="max-h-56 space-y-2 overflow-y-auto rounded border border-outline-variant bg-surface-container-lowest p-3">
+            {VISIT_REMARK_CHECKS.map((item) => (
+              <label
+                key={item.id}
+                className="flex cursor-pointer items-start gap-2.5 text-sm text-on-surface"
+              >
+                <input
+                  type="checkbox"
+                  className="mt-0.5 h-4 w-4 shrink-0 rounded border-outline-variant text-primary focus:ring-primary/30"
+                  checked={checkedRemarks.includes(item.id)}
+                  onChange={() => toggleRemark(item.id)}
+                />
+                <span>{item.label}</span>
+              </label>
+            ))}
+          </div>
+          {checkedRemarks.length === 0 && (
+            <p className="mt-1 text-xs text-on-surface-variant">Select at least one observation.</p>
+          )}
+        </div>
+
+        <FormField label="Additional notes">
+          <Textarea
+            rows={2}
+            value={additionalNotes}
+            onChange={(e) => setAdditionalNotes(e.target.value)}
+            placeholder="Optional free-text details"
+          />
         </FormField>
 
         {error && <p className="text-sm text-error">{error}</p>}
@@ -150,11 +194,7 @@ export function VisitCaptureModal({
           <Button type="button" variant="secondary" onClick={onClose}>
             Cancel
           </Button>
-          <Button
-            type="button"
-            onClick={handleSubmit}
-            disabled={geo.status !== "ready" || isSubmitting || !remarks}
-          >
+          <Button type="button" onClick={handleSubmit} disabled={!canSubmit}>
             {isSubmitting ? "Submitting..." : "Submit visit report"}
           </Button>
         </div>

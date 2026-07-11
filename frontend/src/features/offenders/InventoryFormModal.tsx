@@ -2,8 +2,9 @@ import { useState } from "react";
 
 import type { InventoryItemPayload } from "@/api/criminalRecords";
 import { Button } from "@/components/ui/Button";
-import { FormField, Input, Select } from "@/components/ui/Input";
+import { FormField, Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import { Select } from "@/components/ui/Select";
 import type { Crime, InventoryItemType } from "@/types";
 
 export function InventoryFormModal({
@@ -41,13 +42,15 @@ export function InventoryFormModal({
       >
         <FormField label="Item type">
           <Select
+            aria-label="Item type"
             value={form.item_type}
-            onChange={(e) => setForm((f) => ({ ...f, item_type: e.target.value as InventoryItemType }))}
-          >
-            <option value="weapon">Weapon</option>
-            <option value="substance">Substance / Narcotic</option>
-            <option value="other">Other</option>
-          </Select>
+            onValueChange={(v) => setForm((f) => ({ ...f, item_type: v as InventoryItemType }))}
+            options={[
+              { value: "weapon", label: "Weapon" },
+              { value: "substance", label: "Substance / Narcotic" },
+              { value: "other", label: "Other" },
+            ]}
+          />
         </FormField>
         <FormField label="Description">
           <Input
@@ -83,26 +86,29 @@ export function InventoryFormModal({
         </FormField>
         <FormField label="Related crime (optional)">
           <Select
-            value={form.crime ?? ""}
-            onChange={(e) => setForm((f) => ({ ...f, crime: e.target.value ? Number(e.target.value) : null }))}
-          >
-            <option value="">Not linked to a specific crime</option>
-            {crimes.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.crime_type} - {c.date_committed ?? "no date"}
-              </option>
-            ))}
-          </Select>
+            aria-label="Related crime"
+            value={form.crime != null ? String(form.crime) : ""}
+            onValueChange={(v) => setForm((f) => ({ ...f, crime: v ? Number(v) : null }))}
+            options={[
+              { value: "", label: "Not linked to a specific crime" },
+              ...crimes.map((c) => ({
+                value: String(c.id),
+                label: `${c.crime_type} - ${c.date_committed ?? "no date"}`,
+              })),
+            ]}
+          />
         </FormField>
         <FormField label="Custody status">
           <Select
+            aria-label="Custody status"
             value={form.status}
-            onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as InventoryItemPayload["status"] }))}
-          >
-            <option value="in_custody">In custody</option>
-            <option value="released">Released</option>
-            <option value="destroyed">Destroyed</option>
-          </Select>
+            onValueChange={(v) => setForm((f) => ({ ...f, status: v as InventoryItemPayload["status"] }))}
+            options={[
+              { value: "in_custody", label: "In custody" },
+              { value: "released", label: "Released" },
+              { value: "destroyed", label: "Destroyed" },
+            ]}
+          />
         </FormField>
         <div className="flex justify-end gap-2 pt-2">
           <Button type="button" variant="secondary" onClick={onClose}>

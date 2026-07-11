@@ -1,51 +1,77 @@
+import { Tag } from "primereact/tag";
+import { cva, type VariantProps } from "class-variance-authority";
 import type { ReactNode } from "react";
 
+import { cn } from "@/lib/utils";
 import type { Offender } from "@/types";
 
-type Tone = "neutral" | "green" | "amber" | "red" | "blue" | "orange" | "medium";
-type ComplianceTone = "violation" | "warning" | "compliant";
+export const badgeVariants = cva(
+  "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] leading-[16.5px]",
+  {
+    variants: {
+      tone: {
+        neutral: "bg-surface-variant text-on-surface-variant",
+        green: "bg-emerald-100 text-emerald-800",
+        amber: "bg-amber-100 text-amber-800",
+        red: "bg-error-container text-on-error-container",
+        blue: "bg-primary-fixed-dim text-on-primary-fixed",
+        orange: "bg-secondary-container/15 text-secondary",
+        medium: "bg-secondary-fixed text-on-secondary-fixed-variant",
+      },
+    },
+    defaultVariants: {
+      tone: "neutral",
+    },
+  },
+);
 
-const toneClasses: Record<Tone, string> = {
-  neutral: "bg-surface-variant text-on-surface-variant",
-  green: "bg-emerald-100 text-emerald-800",
-  amber: "bg-amber-100 text-amber-800",
-  red: "bg-error-container text-on-error-container",
-  blue: "bg-primary-fixed-dim text-on-primary-fixed",
-  orange: "bg-secondary-container/15 text-secondary",
-  medium: "bg-secondary-fixed text-on-secondary-fixed-variant",
-};
+export const complianceBadgeVariants = cva(
+  "inline-flex items-center rounded-full px-2 py-0.5 text-[11px] leading-[16.5px]",
+  {
+    variants: {
+      tone: {
+        violation: "bg-secondary-container text-on-secondary-container",
+        warning: "border border-outline-variant bg-surface-container-high text-on-surface",
+        compliant: "bg-primary-fixed-dim text-on-primary-fixed",
+      },
+    },
+  },
+);
 
-const complianceClasses: Record<ComplianceTone, string> = {
-  violation: "bg-secondary-container text-on-secondary-container",
-  warning: "border border-outline-variant bg-surface-container-high text-on-surface",
-  compliant: "bg-primary-fixed-dim text-on-primary-fixed",
-};
+type Tone = NonNullable<VariantProps<typeof badgeVariants>["tone"]>;
+type ComplianceTone = NonNullable<VariantProps<typeof complianceBadgeVariants>["tone"]>;
 
-export function Badge({ tone = "neutral", children }: { tone?: Tone; children: ReactNode }) {
+export function Badge({
+  tone = "neutral",
+  className,
+  children,
+}: {
+  tone?: Tone;
+  className?: string;
+  children: ReactNode;
+}) {
   const isAlert = tone === "red" || tone === "orange";
   return (
-    <span
-      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] leading-[16.5px] ${toneClasses[tone]}`}
-    >
+    <Tag unstyled className={cn(badgeVariants({ tone }), className)}>
       {isAlert && <span aria-hidden>⚠</span>}
       {children}
-    </span>
+    </Tag>
   );
 }
 
 export function ComplianceBadge({
   tone,
+  className,
   children,
 }: {
   tone: ComplianceTone;
+  className?: string;
   children: ReactNode;
 }) {
   return (
-    <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] leading-[16.5px] ${complianceClasses[tone]}`}
-    >
+    <Tag unstyled className={cn(complianceBadgeVariants({ tone }), className)}>
       {children}
-    </span>
+    </Tag>
   );
 }
 

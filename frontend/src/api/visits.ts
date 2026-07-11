@@ -20,11 +20,17 @@ export async function fetchMySchedules(): Promise<Paginated<VisitSchedule>> {
   return data;
 }
 
+export type VisitRecurrence = "once" | "weekly" | "biweekly" | "monthly";
+
 export type VisitScheduleInput = {
   offender: number;
   assigned_officer: number;
   scheduled_date: string;
   notes?: string;
+  /** Write-only: expands into multiple VisitSchedule rows on create. */
+  recurrence?: VisitRecurrence;
+  /** Inclusive end date; required when recurrence is not "once". */
+  until_date?: string;
 };
 
 export async function createVisitSchedule(payload: VisitScheduleInput): Promise<VisitSchedule> {

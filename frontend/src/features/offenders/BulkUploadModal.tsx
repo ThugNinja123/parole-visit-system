@@ -1,8 +1,10 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import type { ColDef } from "ag-grid-community";
 import { isAxiosError } from "axios";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 import { bulkUploadOffenders } from "@/api/offenders";
+import { DataGrid } from "@/components/DataGrid";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import {
@@ -12,6 +14,51 @@ import {
   TEMPLATE_EXAMPLE_ROW,
 } from "@/features/offenders/bulkUploadRules";
 import type { BulkUploadResult } from "@/types";
+
+interface BulkUploadErrorRow {
+  id: string;
+  row: number;
+  field: string;
+  issue: string;
+}
+
+function flattenUploadErrors(errors: BulkUploadResult["errors"]): BulkUploadErrorRow[] {
+  return errors.flatMap((rowError) =>
+    Object.entries(rowError.errors).map(([field, messages]) => ({
+      id: `${rowError.row}-${field}`,
+      row: rowError.row,
+      field,
+      issue: messages.join(" "),
+    })),
+  );
+}
+
+const errorColumnDefs: ColDef<BulkUploadErrorRow>[] = [
+  {
+    headerName: "Row",
+    field: "row",
+    width: 72,
+    sortable: true,
+    cellClass: "font-data text-on-surface",
+  },
+  {
+    headerName: "Field",
+    field: "field",
+    width: 140,
+    sortable: true,
+    valueFormatter: ({ value }) => String(value).replace(/_/g, " "),
+    cellClass: "capitalize text-on-surface",
+  },
+  {
+    headerName: "Issue",
+    field: "issue",
+    flex: 1,
+    minWidth: 200,
+    wrapText: true,
+    autoHeight: true,
+    cellClass: "text-on-surface-variant",
+  },
+];
 
 function csvEscape(value: string): string {
   if (/[",\n]/.test(value)) {
@@ -73,6 +120,11 @@ export function BulkUploadModal({ onClose }: { onClose: () => void }) {
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
+  const errorRows = useMemo(
+    () => (result ? flattenUploadErrors(result.errors) : []),
+    [result],
+  );
+
   return (
     <Modal title="Bulk upload offenders" onClose={onClose} wide>
       <div className="space-y-4">
@@ -131,27 +183,16 @@ export function BulkUploadModal({ onClose }: { onClose: () => void }) {
             </div>
 
             {result.errors.length > 0 && (
-              <div className="max-h-64 overflow-y-auto rounded border border-outline-variant">
-                <table className="w-full text-left text-sm">
-                  <thead className="sticky top-0 bg-surface-container-low">
-                    <tr>
-                      <th className="px-3 py-2 text-label-md text-on-surface-variant">Row</th>
-                      <th className="px-3 py-2 text-label-md text-on-surface-variant">Field</th>
-                      <th className="px-3 py-2 text-label-md text-on-surface-variant">Issue</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {result.errors.flatMap((rowError) =>
-                      Object.entries(rowError.errors).map(([field, messages]) => (
-                        <tr key={`${rowError.row}-${field}`} className="border-t border-outline-variant">
-                          <td className="px-3 py-2 font-data text-on-surface">{rowError.row}</td>
-                          <td className="px-3 py-2 capitalize text-on-surface">{field.replace(/_/g, " ")}</td>
-                          <td className="px-3 py-2 text-on-surface-variant">{messages.join(" ")}</td>
-                        </tr>
-                      )),
-                    )}
-                  </tbody>
-                </table>
+              <div className="max-h-64 overflow-hidden rounded border border-outline-variant">
+                <DataGrid<BulkUploadErrorRow>
+                  rowData={errorRows}
+                  columnDefs={errorColumnDefs}
+                  domLayout="normal"
+                  className="app-data-grid h-64 w-full"
+                  getRowId={(params) => params.data.id}
+                  rowHeight={40}
+                  headerHeight={36}
+                />
               </div>
             )}
 

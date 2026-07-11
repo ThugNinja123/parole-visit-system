@@ -1,14 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
+import { FileText, MapPin, User } from "lucide-react";
 import { useState } from "react";
 
 import { fetchDistricts, fetchPoliceStations } from "@/api/geography";
 import type { OffenderFormValues } from "@/api/offenders";
 import { LocationPicker } from "@/components/LocationPicker";
-import { CaseFileIcon, MapPinIcon, PersonIcon } from "@/components/NavIcons";
 import { Button } from "@/components/ui/Button";
 import { FormSection } from "@/components/ui/FormSection";
-import { FormField, Input, Select, Textarea } from "@/components/ui/Input";
+import { FormField, Input, Textarea } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import { Select } from "@/components/ui/Select";
 import type { EyeColor, Offender } from "@/types";
 
 const EYE_COLORS: { value: EyeColor; label: string }[] = [
@@ -137,7 +138,7 @@ export function OffenderFormModal({
       >
         <FormSection
           title="Personal Information"
-          icon={<PersonIcon className="size-5 text-primary" />}
+          icon={<User className="size-5 text-primary" />}
           iconClassName="bg-[#eff6ff] text-primary"
         >
           <div className="grid grid-cols-2 gap-4">
@@ -191,13 +192,12 @@ export function OffenderFormModal({
                 />
               </FormField>
               <FormField label="Eye Color">
-                <Select value={form.eye_color} onChange={(e) => update("eye_color", e.target.value as EyeColor)}>
-                  {EYE_COLORS.map((c) => (
-                    <option key={c.value} value={c.value}>
-                      {c.label}
-                    </option>
-                  ))}
-                </Select>
+                <Select
+                  aria-label="Eye Color"
+                  value={form.eye_color}
+                  onValueChange={(v) => update("eye_color", v as EyeColor)}
+                  options={EYE_COLORS}
+                />
               </FormField>
             </div>
           </div>
@@ -223,7 +223,7 @@ export function OffenderFormModal({
 
         <FormSection
           title="Case & Conviction Details"
-          icon={<CaseFileIcon className="size-5 text-[#ea580c]" />}
+          icon={<FileText className="size-5 text-[#ea580c]" />}
           iconClassName="bg-[#fff7ed] text-[#ea580c]"
         >
           <div className="grid grid-cols-2 gap-4">
@@ -273,7 +273,7 @@ export function OffenderFormModal({
 
         <FormSection
           title="Parole & Assignment"
-          icon={<MapPinIcon className="size-5 text-on-surface-variant" />}
+          icon={<MapPin className="size-5 text-on-surface-variant" />}
           iconClassName="bg-surface-container-low text-on-surface-variant"
         >
           <div className="grid grid-cols-2 gap-4">
@@ -295,67 +295,61 @@ export function OffenderFormModal({
             </div>
             <FormField label="Parole Status">
               <Select
+                aria-label="Parole Status"
                 value={form.parole_status}
-                onChange={(e) => update("parole_status", e.target.value as OffenderFormValues["parole_status"])}
-              >
-                <option value="active">Active</option>
-                <option value="completed">Completed</option>
-                <option value="absconded">Absconded</option>
-              </Select>
+                onValueChange={(v) => update("parole_status", v as OffenderFormValues["parole_status"])}
+                options={[
+                  { value: "active", label: "Active" },
+                  { value: "completed", label: "Completed" },
+                  { value: "absconded", label: "Absconded" },
+                ]}
+              />
             </FormField>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <FormField label="District" required>
               <Select
-                value={form.district || ""}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, district: Number(e.target.value), police_station: 0, ps_arrested: null }))
+                aria-label="District"
+                value={form.district ? String(form.district) : ""}
+                onValueChange={(v) =>
+                  setForm((f) => ({ ...f, district: Number(v), police_station: 0, ps_arrested: null }))
                 }
                 required
-              >
-                <option value="" disabled>
-                  Select district
-                </option>
-                {districtsQuery.data?.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.name}
-                  </option>
-                ))}
-              </Select>
+                placeholder="Select district"
+                options={[
+                  { value: "", label: "Select district", disabled: true },
+                  ...(districtsQuery.data?.map((d) => ({ value: String(d.id), label: d.name })) ?? []),
+                ]}
+              />
             </FormField>
             <FormField label="Home Police Station" required>
               <Select
-                value={form.police_station || ""}
-                onChange={(e) => update("police_station", Number(e.target.value))}
+                aria-label="Home Police Station"
+                value={form.police_station ? String(form.police_station) : ""}
+                onValueChange={(v) => update("police_station", Number(v))}
                 disabled={!form.district}
                 required
-              >
-                <option value="" disabled>
-                  Select station
-                </option>
-                {stationsQuery.data?.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </Select>
+                placeholder="Select station"
+                options={[
+                  { value: "", label: "Select station", disabled: true },
+                  ...(stationsQuery.data?.map((s) => ({ value: String(s.id), label: s.name })) ?? []),
+                ]}
+              />
             </FormField>
           </div>
 
           <FormField label="Arrested at (optional)">
             <Select
-              value={form.ps_arrested ?? ""}
-              onChange={(e) => update("ps_arrested", e.target.value ? Number(e.target.value) : null)}
+              aria-label="Arrested at"
+              value={form.ps_arrested != null ? String(form.ps_arrested) : ""}
+              onValueChange={(v) => update("ps_arrested", v ? Number(v) : null)}
               disabled={!form.district}
-            >
-              <option value="">Same as home station</option>
-              {stationsQuery.data?.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </Select>
+              options={[
+                { value: "", label: "Same as home station" },
+                ...(stationsQuery.data?.map((s) => ({ value: String(s.id), label: s.name })) ?? []),
+              ]}
+            />
           </FormField>
 
           <label className="flex cursor-pointer items-start gap-3 rounded border border-outline-variant bg-surface-container-low p-4">

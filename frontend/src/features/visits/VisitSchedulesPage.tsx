@@ -1,13 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import type { ColDef, ICellRendererParams } from "ag-grid-community";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { createVisitSchedule, fetchVisitSchedules, type VisitScheduleInput } from "@/api/visits";
+import { DataGrid } from "@/components/DataGrid";
 import { PermissionGate } from "@/components/PermissionGate";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Spinner } from "@/components/ui/Spinner";
-import type { VisitScheduleStatus } from "@/types";
+import type { VisitSchedule, VisitScheduleStatus } from "@/types";
 
 import { VisitScheduleFormModal } from "@/features/visits/VisitScheduleFormModal";
 
@@ -17,6 +18,20 @@ const STATUS_TONE: Record<VisitScheduleStatus, "neutral" | "green" | "amber" | "
   missed: "red",
   cancelled: "neutral",
 };
+
+function OffenderLinkRenderer({ data }: ICellRendererParams<VisitSchedule>) {
+  if (!data) return null;
+  return (
+    <Link to={`/offenders/${data.offender}`} className="font-medium text-primary hover:underline">
+      {data.offender_name}
+    </Link>
+  );
+}
+
+function StatusBadgeRenderer({ data }: ICellRendererParams<VisitSchedule>) {
+  if (!data) return null;
+  return <Badge tone={STATUS_TONE[data.status]}>{data.status}</Badge>;
+}
 
 export function VisitSchedulesPage() {
   const [showCreate, setShowCreate] = useState(false);
@@ -31,6 +46,41 @@ export function VisitSchedulesPage() {
       setShowCreate(false);
     },
   });
+
+  const columnDefs = useMemo<ColDef<VisitSchedule>[]>(
+    () => [
+      {
+        headerName: "Offender",
+        field: "offender_name",
+        flex: 1,
+        minWidth: 180,
+        sortable: true,
+        cellRenderer: OffenderLinkRenderer,
+      },
+      {
+        headerName: "Assigned officer",
+        field: "assigned_officer_name",
+        flex: 1,
+        minWidth: 160,
+        sortable: true,
+      },
+      {
+        headerName: "Scheduled date",
+        field: "scheduled_date",
+        width: 140,
+        sortable: true,
+        cellClass: "font-data text-on-surface-variant",
+      },
+      {
+        headerName: "Status",
+        field: "status",
+        width: 120,
+        sortable: true,
+        cellRenderer: StatusBadgeRenderer,
+      },
+    ],
+    [],
+  );
 
   function handleCreate(payload: VisitScheduleInput) {
     createMutation.mutate(payload);
@@ -49,52 +99,14 @@ export function VisitSchedulesPage() {
       </div>
 
       <div className="overflow-hidden rounded-lg border border-outline-variant bg-surface-container-lowest">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-surface-container-low text-label-md text-on-surface-variant">
-            <tr>
-              <th className="px-4 py-2">Offender</th>
-              <th className="px-4 py-2">Assigned officer</th>
-              <th className="px-4 py-2">Scheduled date</th>
-              <th className="px-4 py-2">Status</th>
-            </tr>
-          </thead>
-          <tbody className="tabular-nums">
-            {schedulesQuery.isLoading && (
-              <tr>
-                <td colSpan={4} className="py-8 text-center">
-                  <Spinner />
-                </td>
-              </tr>
-            )}
-            {schedulesQuery.data?.results.map((schedule, index) => (
-              <tr
-                key={schedule.id}
-                className={`${index % 2 === 1 ? "bg-surface-container-low/60" : ""} hover:bg-surface-container`}
-              >
-                <td className="px-4 py-2">
-                  <Link
-                    to={`/offenders/${schedule.offender}`}
-                    className="font-medium text-primary hover:underline"
-                  >
-                    {schedule.offender_name}
-                  </Link>
-                </td>
-                <td className="px-4 py-2 text-on-surface-variant">{schedule.assigned_officer_name}</td>
-                <td className="px-4 py-2 text-on-surface-variant">{schedule.scheduled_date}</td>
-                <td className="px-4 py-2">
-                  <Badge tone={STATUS_TONE[schedule.status]}>{schedule.status}</Badge>
-                </td>
-              </tr>
-            ))}
-            {schedulesQuery.data?.results.length === 0 && (
-              <tr>
-                <td colSpan={4} className="py-8 text-center text-outline">
-                  No visits scheduled yet.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+        <DataGrid<VisitSchedule>
+          rowData={schedulesQuery.data?.results ?? []}
+          columnDefs={columnDefs}
+          rowHeight={44}
+          headerHeight={40}
+          loading={schedulesQuery.isLoading}
+          overlayNoRowsTemplate='<span class="text-outline">No visits scheduled yet.</span>'
+        />
       </div>
 
       {showCreate && (

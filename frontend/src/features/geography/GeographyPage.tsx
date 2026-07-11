@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { ColDef, ICellRendererParams } from "ag-grid-community";
 import { isAxiosError } from "axios";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import {
   createDistrict,
@@ -12,10 +13,12 @@ import {
   updateDistrict,
   updatePoliceStation,
 } from "@/api/geography";
+import { DataGrid } from "@/components/DataGrid";
 import { PermissionGate } from "@/components/PermissionGate";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
-import { FormField, Select } from "@/components/ui/Input";
+import { FormField } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
 import { FullPageSpinner } from "@/components/ui/Spinner";
 import type { District, PoliceStation } from "@/types";
 
@@ -26,6 +29,82 @@ function extractErrorMessage(err: unknown, fallback: string): string {
   return isAxiosError<{ detail?: string }>(err) && err.response?.data?.detail
     ? err.response.data.detail
     : fallback;
+}
+
+interface DistrictGridContext {
+  onEdit: (district: District) => void;
+  onDelete: (id: number) => void;
+}
+
+interface StationGridContext {
+  onEdit: (station: PoliceStation) => void;
+  onDelete: (id: number) => void;
+}
+
+function locationLabel(latitude: number | null, longitude: number | null): string {
+  return latitude != null && longitude != null ? "Location set" : "No location set";
+}
+
+function DistrictNameRenderer({ data }: ICellRendererParams<District>) {
+  if (!data) return null;
+  return (
+    <div className="py-1">
+      <p className="text-sm font-medium text-on-surface">{data.name}</p>
+      <p className="text-xs text-on-surface-variant">
+        {data.code || "No code"} - {locationLabel(data.latitude, data.longitude)}
+      </p>
+    </div>
+  );
+}
+
+function StationNameRenderer({ data }: ICellRendererParams<PoliceStation>) {
+  if (!data) return null;
+  return (
+    <div className="py-1">
+      <p className="text-sm font-medium text-on-surface">{data.name}</p>
+      <p className="text-xs text-on-surface-variant">
+        {data.district_name} - {data.code || "No code"} - {locationLabel(data.latitude, data.longitude)}
+      </p>
+    </div>
+  );
+}
+
+function DistrictActionsRenderer({
+  data,
+  context,
+}: ICellRendererParams<District, unknown, DistrictGridContext>) {
+  if (!data) return null;
+  return (
+    <PermissionGate code="geography.manage">
+      <div className="flex h-full items-center justify-end gap-2">
+        <Button variant="secondary" onClick={() => context.onEdit(data)}>
+          Edit
+        </Button>
+        <Button variant="danger" onClick={() => context.onDelete(data.id)}>
+          Delete
+        </Button>
+      </div>
+    </PermissionGate>
+  );
+}
+
+function StationActionsRenderer({
+  data,
+  context,
+}: ICellRendererParams<PoliceStation, unknown, StationGridContext>) {
+  if (!data) return null;
+  return (
+    <PermissionGate code="geography.manage">
+      <div className="flex h-full items-center justify-end gap-2">
+        <Button variant="secondary" onClick={() => context.onEdit(data)}>
+          Edit
+        </Button>
+        <Button variant="danger" onClick={() => context.onDelete(data.id)}>
+          Delete
+        </Button>
+      </div>
+    </PermissionGate>
+  );
 }
 
 export function GeographyPage() {
@@ -90,6 +169,72 @@ export function GeographyPage() {
     },
   });
 
+  const districtColumnDefs = useMemo<ColDef<District>[]>(
+    () => [
+      {
+        headerName: "District",
+        field: "name",
+        flex: 1,
+        minWidth: 240,
+        sortable: true,
+        cellRenderer: DistrictNameRenderer,
+        autoHeight: true,
+      },
+      {
+        headerName: "Actions",
+        width: 180,
+        sortable: false,
+        resizable: false,
+        cellRenderer: DistrictActionsRenderer,
+      },
+    ],
+    [],
+  );
+
+  const stationColumnDefs = useMemo<ColDef<PoliceStation>[]>(
+    () => [
+      {
+        headerName: "Police station",
+        field: "name",
+        flex: 1,
+        minWidth: 280,
+        sortable: true,
+        cellRenderer: StationNameRenderer,
+        autoHeight: true,
+      },
+      {
+        headerName: "Actions",
+        width: 180,
+        sortable: false,
+        resizable: false,
+        cellRenderer: StationActionsRenderer,
+      },
+    ],
+    [],
+  );
+
+  const districtGridContext = useMemo<DistrictGridContext>(
+    () => ({
+      onEdit: setEditingDistrict,
+      onDelete: (id) => {
+        setDistrictDeleteError(null);
+        deleteDistrictMutation.mutate(id);
+      },
+    }),
+    [deleteDistrictMutation],
+  );
+
+  const stationGridContext = useMemo<StationGridContext>(
+    () => ({
+      onEdit: setEditingStation,
+      onDelete: (id) => {
+        setStationDeleteError(null);
+        deleteStationMutation.mutate(id);
+      },
+    }),
+    [deleteStationMutation],
+  );
+
   if (districtsQuery.isLoading) return <FullPageSpinner />;
 
   return (
@@ -127,41 +272,14 @@ export function GeographyPage() {
           </CardHeader>
           <CardBody className="space-y-3">
             {districtDeleteError && <p className="text-sm text-error">{districtDeleteError}</p>}
-            {districtsQuery.data?.length === 0 && (
-              <p className="text-sm text-on-surface-variant">No districts yet.</p>
-            )}
-            {districtsQuery.data?.map((district) => (
-              <div
-                key={district.id}
-                className="flex items-center justify-between rounded border border-outline-variant px-4 py-3"
-              >
-                <div>
-                  <p className="text-sm font-medium text-on-surface">{district.name}</p>
-                  <p className="text-xs text-on-surface-variant">
-                    {district.code || "No code"} -{" "}
-                    {district.latitude != null && district.longitude != null
-                      ? "Location set"
-                      : "No location set"}
-                  </p>
-                </div>
-                <PermissionGate code="geography.manage">
-                  <div className="flex gap-2">
-                    <Button variant="secondary" onClick={() => setEditingDistrict(district)}>
-                      Edit
-                    </Button>
-                    <Button
-                      variant="danger"
-                      onClick={() => {
-                        setDistrictDeleteError(null);
-                        deleteDistrictMutation.mutate(district.id);
-                      }}
-                    >
-                      Delete
-                    </Button>
-                  </div>
-                </PermissionGate>
-              </div>
-            ))}
+            <DataGrid<District>
+              rowData={districtsQuery.data ?? []}
+              columnDefs={districtColumnDefs}
+              context={districtGridContext}
+              rowHeight={56}
+              headerHeight={40}
+              overlayNoRowsTemplate='<span class="text-sm text-on-surface-variant">No districts yet.</span>'
+            />
           </CardBody>
         </Card>
       )}
@@ -177,58 +295,30 @@ export function GeographyPage() {
           <CardBody className="space-y-4">
             <FormField label="Filter by district">
               <Select
-                value={stationDistrictFilter}
-                onChange={(e) => setStationDistrictFilter(e.target.value ? Number(e.target.value) : "")}
+                aria-label="Filter by district"
+                value={stationDistrictFilter === "" ? "" : String(stationDistrictFilter)}
+                onValueChange={(v) => setStationDistrictFilter(v ? Number(v) : "")}
                 className="max-w-xs"
-              >
-                <option value="">All districts</option>
-                {districtsQuery.data?.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.name}
-                  </option>
-                ))}
-              </Select>
+                options={[
+                  { value: "", label: "All districts" },
+                  ...(districtsQuery.data?.map((d) => ({ value: String(d.id), label: d.name })) ?? []),
+                ]}
+              />
             </FormField>
 
             {stationDeleteError && <p className="text-sm text-error">{stationDeleteError}</p>}
-            {stationsQuery.isLoading && <FullPageSpinner />}
-            <div className="space-y-3">
-              {stationsQuery.data?.length === 0 && (
-                <p className="text-sm text-on-surface-variant">No police stations found.</p>
-              )}
-              {stationsQuery.data?.map((station) => (
-                <div
-                  key={station.id}
-                  className="flex items-center justify-between rounded border border-outline-variant px-4 py-3"
-                >
-                  <div>
-                    <p className="text-sm font-medium text-on-surface">{station.name}</p>
-                    <p className="text-xs text-on-surface-variant">
-                      {station.district_name} - {station.code || "No code"} -{" "}
-                      {station.latitude != null && station.longitude != null
-                        ? "Location set"
-                        : "No location set"}
-                    </p>
-                  </div>
-                  <PermissionGate code="geography.manage">
-                    <div className="flex gap-2">
-                      <Button variant="secondary" onClick={() => setEditingStation(station)}>
-                        Edit
-                      </Button>
-                      <Button
-                        variant="danger"
-                        onClick={() => {
-                          setStationDeleteError(null);
-                          deleteStationMutation.mutate(station.id);
-                        }}
-                      >
-                        Delete
-                      </Button>
-                    </div>
-                  </PermissionGate>
-                </div>
-              ))}
-            </div>
+            {stationsQuery.isLoading ? (
+              <FullPageSpinner />
+            ) : (
+              <DataGrid<PoliceStation>
+                rowData={stationsQuery.data ?? []}
+                columnDefs={stationColumnDefs}
+                context={stationGridContext}
+                rowHeight={56}
+                headerHeight={40}
+                overlayNoRowsTemplate='<span class="text-sm text-on-surface-variant">No police stations found.</span>'
+              />
+            )}
           </CardBody>
         </Card>
       )}

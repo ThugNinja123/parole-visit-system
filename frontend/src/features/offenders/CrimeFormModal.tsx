@@ -2,8 +2,9 @@ import { useState } from "react";
 
 import type { CrimePayload } from "@/api/criminalRecords";
 import { Button } from "@/components/ui/Button";
-import { FormField, Input, Select, Textarea } from "@/components/ui/Input";
+import { FormField, Input, Textarea } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import { Select } from "@/components/ui/Select";
 import type { CrimeType } from "@/types";
 
 const CRIME_TYPES: { value: CrimeType; label: string }[] = [
@@ -47,15 +48,11 @@ export function CrimeFormModal({
       >
         <FormField label="Crime type">
           <Select
+            aria-label="Crime type"
             value={form.crime_type}
-            onChange={(e) => setForm((f) => ({ ...f, crime_type: e.target.value as CrimeType }))}
-          >
-            {CRIME_TYPES.map((c) => (
-              <option key={c.value} value={c.value}>
-                {c.label}
-              </option>
-            ))}
-          </Select>
+            onValueChange={(v) => setForm((f) => ({ ...f, crime_type: v as CrimeType }))}
+            options={CRIME_TYPES}
+          />
         </FormField>
         <FormField label="Date committed">
           <Input

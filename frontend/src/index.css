@@ -119,3 +119,12 @@ body {
   line-height: 18px;
   font-variant-numeric: tabular-nums;
 }
+
+.app-data-grid .ag-header-cell-label {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.app-data-grid .offender-row-highlight {
+  background-color: color-mix(in srgb, var(--color-error-container) 10%, transparent);
+}

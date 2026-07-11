@@ -1,9 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState, type ReactNode } from "react";
+import type { ColDef, ICellRendererParams } from "ag-grid-community";
+import { ListFilter, MoreVertical, UserRound } from "lucide-react";
+import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
 import { fetchDistricts } from "@/api/geography";
 import { createOffender, fetchOffenders, type OffenderFormValues } from "@/api/offenders";
+import { DataGrid } from "@/components/DataGrid";
 import { PermissionGate } from "@/components/PermissionGate";
 import {
   Badge,
@@ -13,8 +16,13 @@ import {
   riskTone,
 } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Select } from "@/components/ui/Input";
-import { Spinner } from "@/components/ui/Spinner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/DropdownMenu";
+import { Select, type SelectOption } from "@/components/ui/Select";
 import { useAuth } from "@/hooks/useAuth";
 import type { Offender, ParoleStatus, RiskLevel } from "@/types";
 
@@ -23,74 +31,25 @@ import { OffenderFormModal } from "@/features/offenders/OffenderFormModal";
 
 const PAGE_SIZE = 25;
 
-function ChevronDownIcon() {
-  return (
-    <svg className="pointer-events-none absolute right-3 top-1/2 h-1.5 w-2 -translate-y-1/2" viewBox="0 0 7 5" fill="none" aria-hidden>
-      <path d="M1 1l2.5 2.5L6 1" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function FilterIcon() {
-  return (
-    <svg className="h-2 w-2.5" viewBox="0 0 11 7" fill="none" aria-hidden>
-      <path d="M0 0.5h11M2 3.5h7M4 6.5h3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function SortIcon() {
-  return (
-    <svg className="h-2.5 w-2.5 text-on-surface-variant" viewBox="0 0 11 11" fill="none" aria-hidden>
-      <path d="M2 4l3.5 3.5L9 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function ViewProfileIcon() {
-  return (
-    <svg className="h-4 w-4" viewBox="0 0 18 17" fill="none" aria-hidden>
-      <circle cx="7" cy="5" r="3" stroke="currentColor" strokeWidth="1.3" />
-      <path d="M1 15c0-3.314 2.686-5 6-5s6 1.686 6 5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-      <circle cx="13.5" cy="5.5" r="2" stroke="currentColor" strokeWidth="1.2" />
-      <path d="M11 12.5c.9-.6 2.1-.9 3.5-.9" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function MoreIcon() {
-  return (
-    <svg className="h-3.5 w-1" viewBox="0 0 4 14" fill="currentColor" aria-hidden>
-      <circle cx="2" cy="2" r="1.5" />
-      <circle cx="2" cy="7" r="1.5" />
-      <circle cx="2" cy="12" r="1.5" />
-    </svg>
-  );
-}
-
 function FilterSelect({
   label,
   value,
   onChange,
-  children,
+  options,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
-  children: ReactNode;
+  options: SelectOption[];
 }) {
   return (
-    <div className="relative">
-      <Select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="appearance-none border-outline-variant bg-surface-container-lowest py-2 pl-3 pr-9 text-body-sm text-on-surface"
-        aria-label={label}
-      >
-        {children}
-      </Select>
-      <ChevronDownIcon />
-    </div>
+    <Select
+      aria-label={label}
+      value={value}
+      onValueChange={onChange}
+      options={options}
+      className="min-w-[160px] text-body-sm"
+    />
   );
 }
 
@@ -146,6 +105,91 @@ function capitalizeRisk(risk: RiskLevel): string {
   return risk.charAt(0).toUpperCase() + risk.slice(1);
 }
 
+function NameCellRenderer({ data }: ICellRendererParams<Offender>) {
+  if (!data) return null;
+
+  return (
+    <div className="flex h-full items-center gap-3">
+      {data.offender_image ? (
+        <img
+          src={data.offender_image}
+          alt=""
+          className="h-8 w-8 shrink-0 rounded-xl border border-outline-variant object-cover"
+        />
+      ) : (
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-outline-variant bg-surface-container font-data text-on-surface-variant">
+          {getInitials(data.name)}
+        </div>
+      )}
+      <div className="min-w-0">
+        <Link
+          to={`/offenders/${data.id}`}
+          className="block truncate text-sm font-semibold text-on-surface hover:underline"
+        >
+          {data.name}
+        </Link>
+        <p className="text-xs text-on-surface-variant">{formatDob(data.date_of_birth)}</p>
+      </div>
+    </div>
+  );
+}
+
+function OffenderIdCellRenderer({ data }: ICellRendererParams<Offender>) {
+  if (!data) return null;
+  return <span className="font-data text-on-surface-variant">{formatOffenderId(data.id)}</span>;
+}
+
+function RiskLevelCellRenderer({ data }: ICellRendererParams<Offender>) {
+  if (!data) return null;
+  return <Badge tone={riskTone(data.risk_level)}>{capitalizeRisk(data.risk_level)}</Badge>;
+}
+
+function ComplianceCellRenderer({ data }: ICellRendererParams<Offender>) {
+  if (!data) return null;
+  const compliance = complianceStatus(data);
+  return <ComplianceBadge tone={compliance.tone}>{compliance.label}</ComplianceBadge>;
+}
+
+function NextVisitCellRenderer({ data }: ICellRendererParams<Offender>) {
+  if (!data) return null;
+  const nextVisit = formatNextVisit(data);
+  return (
+    <span className={`font-data ${nextVisit.urgent ? "font-semibold text-error" : "text-on-surface"}`}>
+      {nextVisit.label}
+    </span>
+  );
+}
+
+function ActionsCellRenderer({ data }: ICellRendererParams<Offender>) {
+  if (!data) return null;
+
+  return (
+    <div className="flex h-full items-center justify-end gap-1">
+      <Link
+        to={`/offenders/${data.id}`}
+        className="rounded p-1.5 text-on-surface transition-colors hover:bg-surface-container-low"
+        aria-label={`View ${data.name}`}
+      >
+        <UserRound className="h-4 w-4" aria-hidden />
+      </Link>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          className="rounded p-1.5 text-on-surface transition-colors hover:bg-surface-container-low"
+          aria-label={`More actions for ${data.name}`}
+        >
+          <MoreVertical className="h-4 w-4" aria-hidden />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuItem render={<Link to={`/offenders/${data.id}`} />}>
+            <UserRound className="h-4 w-4" aria-hidden />
+            View profile
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+}
+
 export function OffendersListPage() {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
@@ -191,6 +235,68 @@ export function OffendersListPage() {
   const selectedDistrict = districtsQuery.data?.find((d) => d.id === district);
   const districtLabel = selectedDistrict?.name ?? user?.police_station_name?.split(" ")[0] ?? "All";
 
+  const columnDefs = useMemo<ColDef<Offender>[]>(
+    () => [
+      {
+        colId: "name",
+        headerName: "Name",
+        field: "name",
+        flex: 1,
+        minWidth: 280,
+        sortable: true,
+        cellRenderer: NameCellRenderer,
+      },
+      {
+        colId: "id",
+        headerName: "ID #",
+        width: 100,
+        sortable: true,
+        valueGetter: ({ data }) => (data ? formatOffenderId(data.id) : ""),
+        cellRenderer: OffenderIdCellRenderer,
+      },
+      {
+        colId: "risk_level",
+        headerName: "Risk Level",
+        field: "risk_level",
+        width: 120,
+        sortable: true,
+        cellRenderer: RiskLevelCellRenderer,
+      },
+      {
+        colId: "compliance",
+        headerName: "Compliance",
+        width: 140,
+        sortable: false,
+        cellRenderer: ComplianceCellRenderer,
+      },
+      {
+        colId: "next_visit",
+        headerName: "Next Visit",
+        width: 207,
+        sortable: false,
+        cellRenderer: NextVisitCellRenderer,
+      },
+      {
+        colId: "actions",
+        headerName: "Actions",
+        width: 80,
+        sortable: false,
+        resizable: false,
+        cellRenderer: ActionsCellRenderer,
+      },
+    ],
+    [],
+  );
+
+  const defaultColDef = useMemo<ColDef<Offender>>(
+    () => ({
+      filter: false,
+      resizable: true,
+      suppressMovable: true,
+    }),
+    [],
+  );
+
   function updateRiskLevel(value: string) {
     setRiskLevel(value as RiskLevel | "");
     setPage(1);
@@ -225,29 +331,33 @@ export function OffendersListPage() {
             label="Risk level filter"
             value={riskLevel}
             onChange={updateRiskLevel}
-          >
-            <option value="">Risk Level: All</option>
-            <option value="low">Risk Level: Low</option>
-            <option value="medium">Risk Level: Medium</option>
-            <option value="high">Risk Level: High</option>
-          </FilterSelect>
+            options={[
+              { value: "", label: "Risk Level: All" },
+              { value: "low", label: "Risk Level: Low" },
+              { value: "medium", label: "Risk Level: Medium" },
+              { value: "high", label: "Risk Level: High" },
+            ]}
+          />
 
-          <FilterSelect label="District filter" value={district === "" ? "" : String(district)} onChange={updateDistrict}>
-            <option value="">District: All</option>
-            {districtsQuery.data?.map((d) => (
-              <option key={d.id} value={d.id}>
-                District: {d.name}
-                {user?.police_station_name?.includes(d.name) ? " (Current)" : ""}
-              </option>
-            ))}
-          </FilterSelect>
+          <FilterSelect
+            label="District filter"
+            value={district === "" ? "" : String(district)}
+            onChange={updateDistrict}
+            options={[
+              { value: "", label: "District: All" },
+              ...(districtsQuery.data?.map((d) => ({
+                value: String(d.id),
+                label: `District: ${d.name}${user?.police_station_name?.includes(d.name) ? " (Current)" : ""}`,
+              })) ?? []),
+            ]}
+          />
 
           <button
             type="button"
             onClick={() => setShowMoreFilters((open) => !open)}
             className="inline-flex items-center gap-2 border border-outline-variant bg-surface-container-lowest px-3 py-2 text-label-md text-on-surface transition-colors hover:bg-surface-container-low"
           >
-            <FilterIcon />
+            <ListFilter className="h-3.5 w-3.5" aria-hidden />
             More Filters
           </button>
 
@@ -265,125 +375,35 @@ export function OffendersListPage() {
 
       {showMoreFilters && (
         <div className="flex flex-wrap items-center gap-3 rounded border border-outline-variant bg-surface-container-lowest p-4">
-          <FilterSelect label="Parole status filter" value={status} onChange={updateStatus}>
-            <option value="">Parole Status: All</option>
-            <option value="active">Parole Status: Active</option>
-            <option value="completed">Parole Status: Completed</option>
-            <option value="absconded">Parole Status: Absconded</option>
-          </FilterSelect>
+          <FilterSelect
+            label="Parole status filter"
+            value={status}
+            onChange={updateStatus}
+            options={[
+              { value: "", label: "Parole Status: All" },
+              { value: "active", label: "Parole Status: Active" },
+              { value: "completed", label: "Parole Status: Completed" },
+              { value: "absconded", label: "Parole Status: Absconded" },
+            ]}
+          />
         </div>
       )}
 
       <div className="overflow-hidden rounded border border-outline-variant bg-surface-container-lowest shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="min-w-[800px] w-full text-left">
-            <thead className="border-b border-outline-variant bg-background">
-              <tr className="text-label-md text-on-surface-variant">
-                <th className="px-4 py-3">
-                  <span className="inline-flex items-center gap-1">
-                    Name
-                    <SortIcon />
-                  </span>
-                </th>
-                <th className="w-[100px] px-4 py-3">ID #</th>
-                <th className="w-[120px] px-4 py-3">Risk Level</th>
-                <th className="w-[140px] px-4 py-3">Compliance</th>
-                <th className="w-[207px] px-4 py-3">Next Visit</th>
-                <th className="w-[80px] px-4 py-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {offendersQuery.isLoading && (
-                <tr>
-                  <td colSpan={6} className="py-12 text-center">
-                    <Spinner />
-                  </td>
-                </tr>
-              )}
-              {results.map((offender) => {
-                const compliance = complianceStatus(offender);
-                const nextVisit = formatNextVisit(offender);
-                const highlight = isHighRiskViolationRow(offender);
-
-                return (
-                  <tr
-                    key={offender.id}
-                    className={`border-t border-outline-variant ${
-                      highlight ? "bg-error-container/10" : "hover:bg-surface-container-low/60"
-                    }`}
-                  >
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        {offender.offender_image ? (
-                          <img
-                            src={offender.offender_image}
-                            alt=""
-                            className="h-8 w-8 shrink-0 rounded-xl border border-outline-variant object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-outline-variant bg-surface-container font-data text-on-surface-variant">
-                            {getInitials(offender.name)}
-                          </div>
-                        )}
-                        <div className="min-w-0">
-                          <Link
-                            to={`/offenders/${offender.id}`}
-                            className="block truncate text-sm font-semibold text-on-surface hover:underline"
-                          >
-                            {offender.name}
-                          </Link>
-                          <p className="text-xs text-on-surface-variant">{formatDob(offender.date_of_birth)}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="font-data text-on-surface-variant">{formatOffenderId(offender.id)}</span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge tone={riskTone(offender.risk_level)}>{capitalizeRisk(offender.risk_level)}</Badge>
-                    </td>
-                    <td className="px-4 py-3">
-                      <ComplianceBadge tone={compliance.tone}>{compliance.label}</ComplianceBadge>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`font-data ${
-                          nextVisit.urgent ? "font-semibold text-error" : "text-on-surface"
-                        }`}
-                      >
-                        {nextVisit.label}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-1">
-                        <Link
-                          to={`/offenders/${offender.id}`}
-                          className="rounded p-1.5 text-on-surface transition-colors hover:bg-surface-container-low"
-                          aria-label={`View ${offender.name}`}
-                        >
-                          <ViewProfileIcon />
-                        </Link>
-                        <button
-                          type="button"
-                          className="rounded p-1.5 text-on-surface transition-colors hover:bg-surface-container-low"
-                          aria-label={`More actions for ${offender.name}`}
-                        >
-                          <MoreIcon />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-              {!offendersQuery.isLoading && results.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="py-12 text-center text-body-sm text-outline">
-                    No offenders match these filters.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+        <div className="w-full">
+          <DataGrid<Offender>
+            rowData={results}
+            columnDefs={columnDefs}
+            defaultColDef={defaultColDef}
+            rowHeight={64}
+            headerHeight={44}
+            loading={offendersQuery.isLoading}
+            overlayNoRowsTemplate='<span class="text-body-sm text-outline">No offenders match these filters.</span>'
+            rowClassRules={{
+              "offender-row-highlight": (params) =>
+                params.data ? isHighRiskViolationRow(params.data) : false,
+            }}
+          />
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-outline-variant bg-background px-4 py-3">

@@ -4,8 +4,9 @@ import { useState } from "react";
 import { fetchPoliceStations } from "@/api/geography";
 import type { UserPayload } from "@/api/roles";
 import { Button } from "@/components/ui/Button";
-import { FormField, Input, Select } from "@/components/ui/Input";
+import { FormField, Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import { Select } from "@/components/ui/Select";
 import type { AppUser, Role } from "@/types";
 
 export function UserFormModal({
@@ -96,18 +97,17 @@ export function UserFormModal({
           </FormField>
           <FormField label="Police station">
             <Select
-              value={form.police_station ?? ""}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, police_station: e.target.value ? Number(e.target.value) : null }))
-              }
-            >
-              <option value="">Unassigned</option>
-              {stationsQuery.data?.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name} ({s.district_name})
-                </option>
-              ))}
-            </Select>
+              aria-label="Police station"
+              value={form.police_station != null ? String(form.police_station) : ""}
+              onValueChange={(v) => setForm((f) => ({ ...f, police_station: v ? Number(v) : null }))}
+              options={[
+                { value: "", label: "Unassigned" },
+                ...(stationsQuery.data?.map((s) => ({
+                  value: String(s.id),
+                  label: `${s.name} (${s.district_name})`,
+                })) ?? []),
+              ]}
+            />
           </FormField>
         </div>
 

@@ -63,7 +63,7 @@ export function LocationPicker({
   const [results, setResults] = useState<GeocodeResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [focusPoint, setFocusPoint] = useState<FocusPoint | null>(null);
-  const debounceRef = useRef<number>();
+  const debounceRef = useRef<number | undefined>(undefined);
 
   useEffect(() => {
     if (query.trim().length < 3) {

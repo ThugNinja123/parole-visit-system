@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { ColDef, ICellRendererParams } from "ag-grid-community";
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
@@ -14,6 +15,7 @@ import {
   type OffenderFormValues,
 } from "@/api/offenders";
 import { fetchVisitRecords } from "@/api/visits";
+import { DataGrid } from "@/components/DataGrid";
 import { PermissionGate } from "@/components/PermissionGate";
 import { Badge, incidentStatusTone, locationStatusTone, riskTone } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -25,7 +27,7 @@ import { IncidentFormModal } from "@/features/offenders/IncidentFormModal";
 import { InventoryFormModal } from "@/features/offenders/InventoryFormModal";
 import { OffenderFormModal } from "@/features/offenders/OffenderFormModal";
 import { ParoleConditionFormModal } from "@/features/offenders/ParoleConditionFormModal";
-import type { EyeColor, VisitType } from "@/types";
+import type { Crime, EyeColor, InventoryItem, ParoleIncident, VisitRecord, VisitType } from "@/types";
 
 type TabKey = "overview" | "crimes" | "inventory" | "visits";
 
@@ -64,6 +66,205 @@ function timeAgo(dateString: string): string {
   const days = Math.round(hours / 24);
   return `${days}d ago`;
 }
+
+function formatLabel(value: string): string {
+  return value.replace(/_/g, " ");
+}
+
+function IncidentTypeRenderer({ data }: ICellRendererParams<ParoleIncident>) {
+  if (!data) return null;
+  return <span className="capitalize text-on-surface">{formatLabel(data.incident_type)}</span>;
+}
+
+function IncidentStatusRenderer({ data }: ICellRendererParams<ParoleIncident>) {
+  if (!data) return null;
+  return <Badge tone={incidentStatusTone(data.status)}>{data.status}</Badge>;
+}
+
+function CrimeTypeRenderer({ data }: ICellRendererParams<Crime>) {
+  if (!data) return null;
+  return <span className="capitalize text-on-surface">{formatLabel(data.crime_type)}</span>;
+}
+
+function InventoryItemRenderer({ data }: ICellRendererParams<InventoryItem>) {
+  if (!data) return null;
+  return (
+    <div className="py-1">
+      <p className="text-sm font-medium capitalize text-on-surface">
+        {data.item_type}: {data.description}
+      </p>
+      <p className="text-xs text-on-surface-variant">
+        {data.quantity && `${data.quantity} - `}Stored at {data.storage_location}
+      </p>
+    </div>
+  );
+}
+
+function InventoryStatusRenderer({ data }: ICellRendererParams<InventoryItem>) {
+  if (!data) return null;
+  return (
+    <Badge tone={data.status === "in_custody" ? "blue" : "neutral"}>{formatLabel(data.status)}</Badge>
+  );
+}
+
+function VisitLocationRenderer({ data }: ICellRendererParams<VisitRecord>) {
+  if (!data) return null;
+  return (
+    <Badge tone={locationStatusTone(data.location_status)}>
+      {data.location_status} ({Math.round(data.distance_meters)}m)
+    </Badge>
+  );
+}
+
+const incidentColumnDefs: ColDef<ParoleIncident>[] = [
+  {
+    headerName: "Date",
+    field: "date",
+    width: 110,
+    sortable: true,
+    cellClass: "font-data text-on-surface",
+  },
+  {
+    headerName: "Type",
+    field: "incident_type",
+    flex: 1,
+    minWidth: 120,
+    sortable: true,
+    cellRenderer: IncidentTypeRenderer,
+  },
+  {
+    headerName: "Status",
+    field: "status",
+    width: 120,
+    sortable: true,
+    cellRenderer: IncidentStatusRenderer,
+  },
+];
+
+const crimeColumnDefs: ColDef<Crime>[] = [
+  {
+    headerName: "Type",
+    field: "crime_type",
+    width: 140,
+    sortable: true,
+    cellRenderer: CrimeTypeRenderer,
+  },
+  {
+    headerName: "Date",
+    field: "date_committed",
+    width: 120,
+    sortable: true,
+    valueFormatter: ({ value }) => (value ? String(value) : "Date unknown"),
+    cellClass: "text-outline",
+  },
+  {
+    headerName: "Case #",
+    field: "case_number",
+    width: 120,
+    sortable: true,
+    cellClass: "font-data text-on-surface-variant",
+  },
+  {
+    headerName: "Description",
+    field: "description",
+    flex: 1,
+    minWidth: 200,
+    wrapText: true,
+    autoHeight: true,
+    cellClass: "text-on-surface-variant",
+  },
+];
+
+const inventoryColumnDefs: ColDef<InventoryItem>[] = [
+  {
+    headerName: "Item",
+    field: "description",
+    flex: 1,
+    minWidth: 240,
+    sortable: true,
+    cellRenderer: InventoryItemRenderer,
+    autoHeight: true,
+  },
+  {
+    headerName: "Status",
+    field: "status",
+    width: 120,
+    sortable: true,
+    cellRenderer: InventoryStatusRenderer,
+  },
+];
+
+const visitColumnDefs: ColDef<VisitRecord>[] = [
+  {
+    headerName: "Visited at",
+    field: "visited_at",
+    width: 180,
+    sortable: true,
+    valueFormatter: ({ value }) => (value ? new Date(value as string).toLocaleString() : ""),
+    cellClass: "text-on-surface",
+  },
+  {
+    headerName: "Officer",
+    field: "officer_name",
+    width: 140,
+    sortable: true,
+  },
+  {
+    headerName: "Type",
+    field: "visit_type",
+    width: 170,
+    sortable: true,
+    valueFormatter: ({ value }) => VISIT_TYPE_LABELS[value as VisitType] ?? String(value),
+    cellClass: "text-outline",
+  },
+  {
+    headerName: "Location",
+    width: 150,
+    sortable: true,
+    cellRenderer: VisitLocationRenderer,
+  },
+  {
+    headerName: "Remarks",
+    field: "remarks",
+    flex: 1,
+    minWidth: 180,
+    wrapText: true,
+    autoHeight: true,
+    cellClass: "text-on-surface-variant",
+  },
+];
+
+const recentVisitColumnDefs: ColDef<VisitRecord>[] = [
+  {
+    headerName: "When",
+    field: "visited_at",
+    width: 130,
+    sortable: false,
+    valueFormatter: ({ value }) => {
+      if (!value) return "";
+      const date = new Date(value as string);
+      return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+    },
+    cellClass: "text-xs text-on-surface-variant",
+  },
+  {
+    headerName: "Type",
+    field: "visit_type",
+    flex: 1,
+    minWidth: 120,
+    sortable: false,
+    valueFormatter: ({ value }) => VISIT_TYPE_LABELS[value as VisitType] ?? String(value),
+    cellClass: "text-label-md text-primary",
+  },
+  {
+    headerName: "Officer",
+    field: "officer_name",
+    width: 120,
+    sortable: false,
+    valueFormatter: ({ value }) => `Officer ${value}`,
+    cellClass: "text-xs text-outline",
+  },
+];
 
 export function OffenderDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -356,38 +557,15 @@ export function OffenderDetailPage() {
                       </Button>
                     </PermissionGate>
                   </div>
-                  {recentIncidents.length === 0 ? (
-                    <p className="mt-2 text-sm text-outline">No incidents recorded.</p>
-                  ) : (
-                    <table className="mt-1 w-full text-left text-sm">
-                      <thead>
-                        <tr className="bg-surface">
-                          <th className="px-1 py-2 text-xs font-semibold tracking-wide text-on-surface-variant">
-                            Date
-                          </th>
-                          <th className="px-1 py-2 text-xs font-semibold tracking-wide text-on-surface-variant">
-                            Type
-                          </th>
-                          <th className="px-1 py-2 text-xs font-semibold tracking-wide text-on-surface-variant">
-                            Status
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {recentIncidents.map((incident) => (
-                          <tr key={incident.id} className="border-t border-outline-variant">
-                            <td className="px-1 py-2 font-data text-on-surface">{incident.date}</td>
-                            <td className="px-1 py-2 capitalize text-on-surface">
-                              {incident.incident_type.replace("_", " ")}
-                            </td>
-                            <td className="px-1 py-2">
-                              <Badge tone={incidentStatusTone(incident.status)}>{incident.status}</Badge>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
+                  <div className="mt-1">
+                    <DataGrid<ParoleIncident>
+                      rowData={recentIncidents}
+                      columnDefs={incidentColumnDefs}
+                      rowHeight={40}
+                      headerHeight={32}
+                      overlayNoRowsTemplate='<span class="text-sm text-outline">No incidents recorded.</span>'
+                    />
+                  </div>
                 </div>
               </CardBody>
             </Card>
@@ -437,33 +615,13 @@ export function OffenderDetailPage() {
                     View all
                   </button>
                 </div>
-                {recentVisits.length === 0 ? (
-                  <p className="text-sm text-outline">No visits recorded yet.</p>
-                ) : (
-                  <div className="space-y-4">
-                    {recentVisits.map((record, index) => (
-                      <div
-                        key={record.id}
-                        className={`border-l-2 py-0.5 pl-4 ${
-                          index === 0 ? "border-primary" : "border-outline-variant"
-                        }`}
-                      >
-                        <p className="text-xs text-on-surface-variant">
-                          {new Date(record.visited_at).toLocaleDateString()} &bull;{" "}
-                          {new Date(record.visited_at).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </p>
-                        <p className="text-label-md text-primary">{VISIT_TYPE_LABELS[record.visit_type]}</p>
-                        {record.remarks && (
-                          <p className="mt-0.5 text-sm text-on-surface">{record.remarks}</p>
-                        )}
-                        <p className="mt-0.5 text-xs text-outline">Officer {record.officer_name}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <DataGrid<VisitRecord>
+                  rowData={recentVisits}
+                  columnDefs={recentVisitColumnDefs}
+                  rowHeight={44}
+                  headerHeight={32}
+                  overlayNoRowsTemplate='<span class="text-sm text-outline">No visits recorded yet.</span>'
+                />
               </CardBody>
             </Card>
           </div>
@@ -478,26 +636,15 @@ export function OffenderDetailPage() {
               <Button onClick={() => setShowAddCrime(true)}>+ Add crime</Button>
             </PermissionGate>
           </CardHeader>
-          <CardBody className="space-y-3">
-            {crimesQuery.data?.length === 0 && (
-              <p className="text-sm text-outline">No crimes recorded.</p>
-            )}
-            {crimesQuery.data?.map((crime) => (
-              <div key={crime.id} className="rounded border border-outline-variant px-4 py-3">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium capitalize text-on-surface">
-                    {crime.crime_type.replace("_", " ")}
-                  </p>
-                  <p className="text-xs text-outline">{crime.date_committed ?? "Date unknown"}</p>
-                </div>
-                {crime.case_number && (
-                  <p className="font-data text-xs text-on-surface-variant">Case #{crime.case_number}</p>
-                )}
-                {crime.description && (
-                  <p className="mt-1 text-sm text-on-surface-variant">{crime.description}</p>
-                )}
-              </div>
-            ))}
+          <CardBody>
+            <DataGrid<Crime>
+              rowData={crimesQuery.data ?? []}
+              columnDefs={crimeColumnDefs}
+              rowHeight={52}
+              headerHeight={40}
+              loading={crimesQuery.isLoading}
+              overlayNoRowsTemplate='<span class="text-sm text-outline">No crimes recorded.</span>'
+            />
           </CardBody>
         </Card>
       )}
@@ -510,28 +657,15 @@ export function OffenderDetailPage() {
               <Button onClick={() => setShowAddItem(true)}>+ Add item</Button>
             </PermissionGate>
           </CardHeader>
-          <CardBody className="space-y-3">
-            {inventoryQuery.data?.length === 0 && (
-              <p className="text-sm text-outline">No inventory items recorded.</p>
-            )}
-            {inventoryQuery.data?.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-center justify-between rounded border border-outline-variant px-4 py-3"
-              >
-                <div>
-                  <p className="text-sm font-medium capitalize text-on-surface">
-                    {item.item_type}: {item.description}
-                  </p>
-                  <p className="text-xs text-on-surface-variant">
-                    {item.quantity && `${item.quantity} - `}Stored at {item.storage_location}
-                  </p>
-                </div>
-                <Badge tone={item.status === "in_custody" ? "blue" : "neutral"}>
-                  {item.status.replace("_", " ")}
-                </Badge>
-              </div>
-            ))}
+          <CardBody>
+            <DataGrid<InventoryItem>
+              rowData={inventoryQuery.data ?? []}
+              columnDefs={inventoryColumnDefs}
+              rowHeight={56}
+              headerHeight={40}
+              loading={inventoryQuery.isLoading}
+              overlayNoRowsTemplate='<span class="text-sm text-outline">No inventory items recorded.</span>'
+            />
           </CardBody>
         </Card>
       )}
@@ -541,24 +675,15 @@ export function OffenderDetailPage() {
           <CardHeader>
             <h2 className="text-headline-md text-on-surface">Visit history</h2>
           </CardHeader>
-          <CardBody className="space-y-3">
-            {visitsQuery.data?.results.length === 0 && (
-              <p className="text-sm text-outline">No visits recorded yet.</p>
-            )}
-            {visitsQuery.data?.results.map((record) => (
-              <div key={record.id} className="rounded border border-outline-variant px-4 py-3">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium text-on-surface">
-                    {new Date(record.visited_at).toLocaleString()} - {record.officer_name}
-                  </p>
-                  <Badge tone={locationStatusTone(record.location_status)}>
-                    {record.location_status} ({Math.round(record.distance_meters)}m)
-                  </Badge>
-                </div>
-                <p className="mt-1 text-xs text-outline">{VISIT_TYPE_LABELS[record.visit_type]}</p>
-                {record.remarks && <p className="mt-1 text-sm text-on-surface-variant">{record.remarks}</p>}
-              </div>
-            ))}
+          <CardBody>
+            <DataGrid<VisitRecord>
+              rowData={visitsQuery.data?.results ?? []}
+              columnDefs={visitColumnDefs}
+              rowHeight={52}
+              headerHeight={40}
+              loading={visitsQuery.isLoading}
+              overlayNoRowsTemplate='<span class="text-sm text-outline">No visits recorded yet.</span>'
+            />
           </CardBody>
         </Card>
       )}

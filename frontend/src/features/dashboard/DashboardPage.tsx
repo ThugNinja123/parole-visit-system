@@ -1,11 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
+import type { ColDef, ICellRendererParams } from "ag-grid-community";
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
 
 import { fetchOffenders } from "@/api/offenders";
 import { fetchFlaggedVisits } from "@/api/visits";
+import { DataGrid } from "@/components/DataGrid";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { FullPageSpinner } from "@/components/ui/Spinner";
+import type { VisitRecord } from "@/types";
 
 function StatCard({ label, value }: { label: string; value: number | string }) {
   return (
@@ -18,6 +22,19 @@ function StatCard({ label, value }: { label: string; value: number | string }) {
   );
 }
 
+function OffenderLinkRenderer({ data }: ICellRendererParams<VisitRecord>) {
+  if (!data) return null;
+  return (
+    <Link to={`/offenders/${data.offender}`} className="text-sm font-medium text-primary hover:underline">
+      {data.offender_name}
+    </Link>
+  );
+}
+
+function FlaggedBadgeRenderer() {
+  return <Badge tone="red">Flagged</Badge>;
+}
+
 export function DashboardPage() {
   const flaggedQuery = useQuery({ queryKey: ["visits", "flagged"], queryFn: fetchFlaggedVisits });
   const offendersQuery = useQuery({
@@ -28,6 +45,47 @@ export function DashboardPage() {
     queryKey: ["offenders", "risk", "high"],
     queryFn: () => fetchOffenders({ risk_level: "high" }),
   });
+
+  const flaggedColumnDefs = useMemo<ColDef<VisitRecord>[]>(
+    () => [
+      {
+        headerName: "Offender",
+        field: "offender_name",
+        flex: 1,
+        minWidth: 160,
+        sortable: true,
+        cellRenderer: OffenderLinkRenderer,
+      },
+      {
+        headerName: "Officer",
+        field: "officer_name",
+        width: 140,
+        sortable: true,
+      },
+      {
+        headerName: "Visited at",
+        field: "visited_at",
+        width: 180,
+        sortable: true,
+        valueFormatter: ({ value }) => (value ? new Date(value as string).toLocaleString() : ""),
+      },
+      {
+        headerName: "Distance",
+        field: "distance_meters",
+        width: 110,
+        sortable: true,
+        valueFormatter: ({ value }) => `${Math.round(value as number)}m`,
+        cellClass: "font-data",
+      },
+      {
+        headerName: "Status",
+        width: 100,
+        sortable: false,
+        cellRenderer: FlaggedBadgeRenderer,
+      },
+    ],
+    [],
+  );
 
   if (flaggedQuery.isLoading || offendersQuery.isLoading || highRiskQuery.isLoading) {
     return <FullPageSpinner />;
@@ -52,31 +110,14 @@ export function DashboardPage() {
         <CardHeader>
           <h2 className="text-headline-md text-on-surface">Flagged visits - review queue</h2>
         </CardHeader>
-        <CardBody className="space-y-3">
-          {flaggedQuery.data?.results.length === 0 && (
-            <p className="text-body-sm text-on-surface-variant">No flagged visits. Everything checks out.</p>
-          )}
-          {flaggedQuery.data?.results.map((record) => (
-            <div
-              key={record.id}
-              className="flex items-center justify-between rounded border border-outline-variant px-4 py-3"
-            >
-              <div>
-                <Link
-                  to={`/offenders/${record.offender}`}
-                  className="text-sm font-medium text-primary hover:underline"
-                >
-                  {record.offender_name}
-                </Link>
-                <p className="text-xs text-on-surface-variant">
-                  Visited by {record.officer_name} on {new Date(record.visited_at).toLocaleString()} -{" "}
-                  <span className="font-data">{Math.round(record.distance_meters)}m</span> from registered
-                  address
-                </p>
-              </div>
-              <Badge tone="red">Flagged</Badge>
-            </div>
-          ))}
+        <CardBody>
+          <DataGrid<VisitRecord>
+            rowData={flaggedQuery.data?.results ?? []}
+            columnDefs={flaggedColumnDefs}
+            rowHeight={44}
+            headerHeight={40}
+            overlayNoRowsTemplate='<span class="text-body-sm text-on-surface-variant">No flagged visits. Everything checks out.</span>'
+          />
         </CardBody>
       </Card>
     </div>

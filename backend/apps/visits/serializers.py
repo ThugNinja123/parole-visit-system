@@ -1,7 +1,9 @@
+from django.db import transaction
 from django.utils import timezone
 from rest_framework import serializers
 
 from .models import VisitRecord, VisitSchedule
+from .recurrence import RECURRENCE_CHOICES, RECURRENCE_ONCE, expand_recurrence
 
 
 class VisitScheduleSerializer(serializers.ModelSerializer):
@@ -10,6 +12,11 @@ class VisitScheduleSerializer(serializers.ModelSerializer):
         source="assigned_officer.get_full_name", read_only=True
     )
     has_record = serializers.SerializerMethodField()
+    recurrence = serializers.ChoiceField(
+        choices=RECURRENCE_CHOICES, default=RECURRENCE_ONCE, required=False, write_only=True
+    )
+    until_date = serializers.DateField(required=False, allow_null=True, write_only=True)
+    created_count = serializers.SerializerMethodField()
 
     class Meta:
         model = VisitSchedule
@@ -26,15 +33,69 @@ class VisitScheduleSerializer(serializers.ModelSerializer):
             "has_record",
             "created_at",
             "updated_at",
+            "recurrence",
+            "until_date",
+            "created_count",
         ]
         read_only_fields = ["created_by"]
 
     def get_has_record(self, obj):
         return obj.records.exists()
 
+    def get_created_count(self, obj):
+        return getattr(obj, "created_count", None)
+
+    def validate(self, attrs):
+        recurrence = attrs.get("recurrence", RECURRENCE_ONCE)
+        until = attrs.get("until_date")
+        start = attrs.get("scheduled_date") or getattr(self.instance, "scheduled_date", None)
+
+        if self.instance is not None:
+            # Updates keep a single schedule row; ignore recurrence expansion.
+            attrs.pop("recurrence", None)
+            attrs.pop("until_date", None)
+            return attrs
+
+        if recurrence != RECURRENCE_ONCE:
+            if until is None:
+                raise serializers.ValidationError(
+                    {"until_date": "Required when scheduling a repeating visit."}
+                )
+            if start and until < start:
+                raise serializers.ValidationError(
+                    {"until_date": "Must be on or after the first scheduled date."}
+                )
+            try:
+                dates = expand_recurrence(start, recurrence, until)
+            except ValueError as exc:
+                raise serializers.ValidationError({"recurrence": str(exc)}) from exc
+            if len(dates) < 1:
+                raise serializers.ValidationError({"scheduled_date": "No visit dates to create."})
+            attrs["_occurrence_dates"] = dates
+        else:
+            attrs["_occurrence_dates"] = [start] if start else []
+
+        return attrs
+
+    @transaction.atomic
     def create(self, validated_data):
+        dates = validated_data.pop("_occurrence_dates", None)
+        validated_data.pop("recurrence", None)
+        validated_data.pop("until_date", None)
         validated_data["created_by"] = self.context["request"].user
-        return super().create(validated_data)
+
+        if not dates:
+            dates = [validated_data["scheduled_date"]]
+
+        first = None
+        for scheduled_date in dates:
+            obj = VisitSchedule.objects.create(**{**validated_data, "scheduled_date": scheduled_date})
+            if first is None:
+                first = obj
+
+        # Attach count so the API response can tell the client how many rows were made.
+        first.created_count = len(dates)
+        return first
 
 
 class VisitRecordSerializer(serializers.ModelSerializer):

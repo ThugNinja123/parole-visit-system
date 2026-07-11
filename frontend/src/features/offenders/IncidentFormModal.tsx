@@ -2,8 +2,9 @@ import { useState } from "react";
 
 import type { IncidentPayload } from "@/api/offenders";
 import { Button } from "@/components/ui/Button";
-import { FormField, Input, Select, Textarea } from "@/components/ui/Input";
+import { FormField, Input, Textarea } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import { Select } from "@/components/ui/Select";
 import type { IncidentStatus, IncidentType } from "@/types";
 
 const INCIDENT_TYPES: { value: IncidentType; label: string }[] = [
@@ -54,27 +55,19 @@ export function IncidentFormModal({
         <div className="grid grid-cols-2 gap-4">
           <FormField label="Incident type">
             <Select
+              aria-label="Incident type"
               value={form.incident_type}
-              onChange={(e) => setForm((f) => ({ ...f, incident_type: e.target.value as IncidentType }))}
-            >
-              {INCIDENT_TYPES.map((t) => (
-                <option key={t.value} value={t.value}>
-                  {t.label}
-                </option>
-              ))}
-            </Select>
+              onValueChange={(v) => setForm((f) => ({ ...f, incident_type: v as IncidentType }))}
+              options={INCIDENT_TYPES}
+            />
           </FormField>
           <FormField label="Status">
             <Select
+              aria-label="Status"
               value={form.status}
-              onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as IncidentStatus }))}
-            >
-              {INCIDENT_STATUSES.map((s) => (
-                <option key={s.value} value={s.value}>
-                  {s.label}
-                </option>
-              ))}
-            </Select>
+              onValueChange={(v) => setForm((f) => ({ ...f, status: v as IncidentStatus }))}
+              options={INCIDENT_STATUSES}
+            />
           </FormField>
         </div>
         <FormField label="Date">

@@ -3,8 +3,9 @@ import { useState } from "react";
 import type { PoliceStationPayload } from "@/api/geography";
 import { LocationPicker } from "@/components/LocationPicker";
 import { Button } from "@/components/ui/Button";
-import { FormField, Input, Select } from "@/components/ui/Input";
+import { FormField, Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import { Select } from "@/components/ui/Select";
 import type { District, PoliceStation } from "@/types";
 
 export function PoliceStationFormModal({
@@ -39,19 +40,16 @@ export function PoliceStationFormModal({
         <div className="grid grid-cols-2 gap-4">
           <FormField label="District" required>
             <Select
-              value={district}
-              onChange={(e) => setDistrict(e.target.value ? Number(e.target.value) : "")}
+              aria-label="District"
+              value={district ? String(district) : ""}
+              onValueChange={(v) => setDistrict(v ? Number(v) : "")}
               required
-            >
-              <option value="" disabled>
-                Select district
-              </option>
-              {districts.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.name}
-                </option>
-              ))}
-            </Select>
+              placeholder="Select district"
+              options={[
+                { value: "", label: "Select district", disabled: true },
+                ...districts.map((d) => ({ value: String(d.id), label: d.name })),
+              ]}
+            />
           </FormField>
           <FormField label="Police station name" required>
             <Input value={name} onChange={(e) => setName(e.target.value)} required />

@@ -1,7 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import type { ColDef, ICellRendererParams } from "ag-grid-community";
+import { useMemo, useState } from "react";
 
 import { createRole, createUser, deleteRole, fetchRoles, fetchUsers, updateRole, updateUser } from "@/api/roles";
+import { DataGrid } from "@/components/DataGrid";
 import { PermissionGate } from "@/components/PermissionGate";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -11,6 +13,75 @@ import type { AppUser, Role } from "@/types";
 
 import { RoleFormModal } from "@/features/roles/RoleFormModal";
 import { UserFormModal } from "@/features/roles/UserFormModal";
+
+interface RoleGridContext {
+  onEdit: (role: Role) => void;
+  onDelete: (id: number) => void;
+}
+
+interface UserGridContext {
+  onEdit: (user: AppUser) => void;
+}
+
+function RoleNameRenderer({ data }: ICellRendererParams<Role>) {
+  if (!data) return null;
+  return (
+    <div className="py-1">
+      <div className="flex items-center gap-2">
+        <p className="text-sm font-medium text-on-surface">{data.name}</p>
+        {data.is_system && <Badge tone="neutral">system</Badge>}
+        <Badge tone="blue">{data.user_count} users</Badge>
+      </div>
+      <p className="text-xs text-on-surface-variant">{data.description}</p>
+      <p className="mt-1 text-xs text-outline">{data.permissions.length} permissions granted</p>
+    </div>
+  );
+}
+
+function RoleActionsRenderer({ data, context }: ICellRendererParams<Role, unknown, RoleGridContext>) {
+  if (!data) return null;
+  return (
+    <PermissionGate code="role.manage">
+      <div className="flex h-full items-center justify-end gap-2">
+        <Button variant="secondary" onClick={() => context.onEdit(data)}>
+          Edit
+        </Button>
+        {!data.is_system && (
+          <Button variant="danger" onClick={() => context.onDelete(data.id)}>
+            Delete
+          </Button>
+        )}
+      </div>
+    </PermissionGate>
+  );
+}
+
+function UserNameRenderer({ data }: ICellRendererParams<AppUser>) {
+  if (!data) return null;
+  return (
+    <div className="py-1">
+      <p className="text-sm font-medium text-on-surface">
+        {data.first_name} {data.last_name} ({data.username})
+      </p>
+      <p className="text-xs text-on-surface-variant">
+        {data.police_station_name ?? "Unassigned station"} - {data.role_names.join(", ") || "No role"}
+      </p>
+    </div>
+  );
+}
+
+function UserActionsRenderer({ data, context }: ICellRendererParams<AppUser, unknown, UserGridContext>) {
+  if (!data) return null;
+  return (
+    <PermissionGate code="user.manage">
+      <div className="flex h-full items-center justify-end">
+        <Button variant="secondary" onClick={() => context.onEdit(data)}>
+          Edit
+        </Button>
+      </div>
+    </PermissionGate>
+  );
+}
 
 export function RolesAccessPage() {
   const [tab, setTab] = useState<"roles" | "users">("roles");
@@ -43,6 +114,60 @@ export function RolesAccessPage() {
       setEditingUser(null);
     },
   });
+
+  const roleColumnDefs = useMemo<ColDef<Role>[]>(
+    () => [
+      {
+        headerName: "Role",
+        field: "name",
+        flex: 1,
+        minWidth: 280,
+        sortable: true,
+        cellRenderer: RoleNameRenderer,
+        autoHeight: true,
+      },
+      {
+        headerName: "Actions",
+        width: 180,
+        sortable: false,
+        resizable: false,
+        cellRenderer: RoleActionsRenderer,
+      },
+    ],
+    [],
+  );
+
+  const userColumnDefs = useMemo<ColDef<AppUser>[]>(
+    () => [
+      {
+        headerName: "User",
+        field: "username",
+        flex: 1,
+        minWidth: 280,
+        sortable: true,
+        cellRenderer: UserNameRenderer,
+        autoHeight: true,
+      },
+      {
+        headerName: "Actions",
+        width: 100,
+        sortable: false,
+        resizable: false,
+        cellRenderer: UserActionsRenderer,
+      },
+    ],
+    [],
+  );
+
+  const roleGridContext = useMemo<RoleGridContext>(
+    () => ({
+      onEdit: setEditingRole,
+      onDelete: (id) => deleteRoleMutation.mutate(id),
+    }),
+    [deleteRoleMutation],
+  );
+
+  const userGridContext = useMemo<UserGridContext>(() => ({ onEdit: setEditingUser }), []);
 
   if (rolesQuery.isLoading) return <FullPageSpinner />;
 
@@ -79,35 +204,14 @@ export function RolesAccessPage() {
               <Button onClick={() => setEditingRole("new")}>+ Create role</Button>
             </PermissionGate>
           </CardHeader>
-          <CardBody className="space-y-3">
-            {rolesQuery.data?.map((role) => (
-              <div
-                key={role.id}
-                className="flex items-center justify-between rounded border border-outline-variant px-4 py-3"
-              >
-                <div>
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium text-on-surface">{role.name}</p>
-                    {role.is_system && <Badge tone="neutral">system</Badge>}
-                    <Badge tone="blue">{role.user_count} users</Badge>
-                  </div>
-                  <p className="text-xs text-on-surface-variant">{role.description}</p>
-                  <p className="mt-1 text-xs text-outline">{role.permissions.length} permissions granted</p>
-                </div>
-                <PermissionGate code="role.manage">
-                  <div className="flex gap-2">
-                    <Button variant="secondary" onClick={() => setEditingRole(role)}>
-                      Edit
-                    </Button>
-                    {!role.is_system && (
-                      <Button variant="danger" onClick={() => deleteRoleMutation.mutate(role.id)}>
-                        Delete
-                      </Button>
-                    )}
-                  </div>
-                </PermissionGate>
-              </div>
-            ))}
+          <CardBody>
+            <DataGrid<Role>
+              rowData={rolesQuery.data ?? []}
+              columnDefs={roleColumnDefs}
+              context={roleGridContext}
+              rowHeight={72}
+              headerHeight={40}
+            />
           </CardBody>
         </Card>
       )}
@@ -120,28 +224,18 @@ export function RolesAccessPage() {
               <Button onClick={() => setEditingUser("new")}>+ Create user</Button>
             </PermissionGate>
           </CardHeader>
-          <CardBody className="space-y-3">
-            {usersQuery.isLoading && <FullPageSpinner />}
-            {usersQuery.data?.map((user) => (
-              <div
-                key={user.id}
-                className="flex items-center justify-between rounded border border-outline-variant px-4 py-3"
-              >
-                <div>
-                  <p className="text-sm font-medium text-on-surface">
-                    {user.first_name} {user.last_name} ({user.username})
-                  </p>
-                  <p className="text-xs text-on-surface-variant">
-                    {user.police_station_name ?? "Unassigned station"} - {user.role_names.join(", ") || "No role"}
-                  </p>
-                </div>
-                <PermissionGate code="user.manage">
-                  <Button variant="secondary" onClick={() => setEditingUser(user)}>
-                    Edit
-                  </Button>
-                </PermissionGate>
-              </div>
-            ))}
+          <CardBody>
+            {usersQuery.isLoading ? (
+              <FullPageSpinner />
+            ) : (
+              <DataGrid<AppUser>
+                rowData={usersQuery.data ?? []}
+                columnDefs={userColumnDefs}
+                context={userGridContext}
+                rowHeight={56}
+                headerHeight={40}
+              />
+            )}
           </CardBody>
         </Card>
       )}

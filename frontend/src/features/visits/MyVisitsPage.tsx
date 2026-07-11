@@ -1,14 +1,43 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import type { ColDef, ICellRendererParams } from "ag-grid-community";
+import { useMemo, useState } from "react";
 
 import { fetchMySchedules } from "@/api/visits";
+import { DataGrid } from "@/components/DataGrid";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Card, CardBody } from "@/components/ui/Card";
 import { FullPageSpinner } from "@/components/ui/Spinner";
-import type { VisitSchedule } from "@/types";
+import type { VisitSchedule, VisitScheduleStatus } from "@/types";
 
 import { VisitCaptureModal } from "@/features/visits/VisitCaptureModal";
+
+const STATUS_TONE: Record<VisitScheduleStatus, "neutral" | "green" | "amber" | "red"> = {
+  pending: "amber",
+  completed: "green",
+  missed: "red",
+  cancelled: "neutral",
+};
+
+interface PendingVisitsContext {
+  onRecordVisit: (schedule: VisitSchedule) => void;
+}
+
+function PendingActionsRenderer({
+  data,
+  context,
+}: ICellRendererParams<VisitSchedule, unknown, PendingVisitsContext>) {
+  if (!data) return null;
+  return (
+    <div className="flex h-full items-center justify-end">
+      <Button onClick={() => context.onRecordVisit(data)}>Record visit</Button>
+    </div>
+  );
+}
+
+function StatusBadgeRenderer({ data }: ICellRendererParams<VisitSchedule>) {
+  if (!data) return null;
+  return <Badge tone={STATUS_TONE[data.status]}>{data.status}</Badge>;
+}
 
 export function MyVisitsPage() {
   const [activeSchedule, setActiveSchedule] = useState<VisitSchedule | null>(null);
@@ -16,10 +45,79 @@ export function MyVisitsPage() {
 
   const schedulesQuery = useQuery({ queryKey: ["visit-schedules", "mine"], queryFn: fetchMySchedules });
 
-  if (schedulesQuery.isLoading) return <FullPageSpinner />;
-
   const pending = schedulesQuery.data?.results.filter((s) => s.status === "pending") ?? [];
   const others = schedulesQuery.data?.results.filter((s) => s.status !== "pending") ?? [];
+
+  const pendingColumnDefs = useMemo<ColDef<VisitSchedule>[]>(
+    () => [
+      {
+        headerName: "Offender",
+        field: "offender_name",
+        flex: 1,
+        minWidth: 160,
+        sortable: true,
+      },
+      {
+        headerName: "Scheduled date",
+        field: "scheduled_date",
+        width: 140,
+        sortable: true,
+        cellClass: "text-on-surface-variant",
+      },
+      {
+        headerName: "Notes",
+        field: "notes",
+        flex: 1,
+        minWidth: 160,
+        wrapText: true,
+        autoHeight: true,
+        cellClass: "text-outline",
+      },
+      {
+        headerName: "Actions",
+        width: 140,
+        sortable: false,
+        resizable: false,
+        cellRenderer: PendingActionsRenderer,
+      },
+    ],
+    [],
+  );
+
+  const pastColumnDefs = useMemo<ColDef<VisitSchedule>[]>(
+    () => [
+      {
+        headerName: "Offender",
+        field: "offender_name",
+        flex: 1,
+        minWidth: 160,
+        sortable: true,
+        cellClass: "text-on-surface-variant",
+      },
+      {
+        headerName: "Scheduled date",
+        field: "scheduled_date",
+        width: 140,
+        sortable: true,
+        cellClass: "text-on-surface-variant",
+      },
+      {
+        headerName: "Status",
+        field: "status",
+        width: 120,
+        sortable: true,
+        cellRenderer: StatusBadgeRenderer,
+      },
+    ],
+    [],
+  );
+
+  const gridContext = useMemo<PendingVisitsContext>(
+    () => ({ onRecordVisit: setActiveSchedule }),
+    [],
+  );
+
+  if (schedulesQuery.isLoading) return <FullPageSpinner />;
 
   return (
     <div className="space-y-6">
@@ -30,39 +128,25 @@ export function MyVisitsPage() {
         </p>
       </div>
 
-      <div className="space-y-3">
-        {pending.length === 0 && (
-          <p className="text-sm text-outline">No pending visits assigned to you.</p>
-        )}
-        {pending.map((schedule) => (
-          <Card key={schedule.id}>
-            <CardBody className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-on-surface">{schedule.offender_name}</p>
-                <p className="text-xs text-on-surface-variant">Scheduled for {schedule.scheduled_date}</p>
-                {schedule.notes && <p className="mt-1 text-xs text-outline">{schedule.notes}</p>}
-              </div>
-              <Button onClick={() => setActiveSchedule(schedule)}>Record visit</Button>
-            </CardBody>
-          </Card>
-        ))}
-      </div>
+      <DataGrid<VisitSchedule>
+        rowData={pending}
+        columnDefs={pendingColumnDefs}
+        context={gridContext}
+        rowHeight={52}
+        headerHeight={40}
+        overlayNoRowsTemplate='<span class="text-sm text-outline">No pending visits assigned to you.</span>'
+      />
 
       {others.length > 0 && (
-        <div>
-          <h2 className="mb-2 text-headline-md text-on-surface">Past visits</h2>
-          <div className="space-y-2">
-            {others.map((schedule) => (
-              <div
-                key={schedule.id}
-                className="flex items-center justify-between rounded border border-outline-variant bg-surface-container-lowest px-4 py-3"
-              >
-                <p className="text-sm text-on-surface-variant">
-                  {schedule.offender_name} - {schedule.scheduled_date}
-                </p>
-                <Badge tone={schedule.status === "completed" ? "green" : "neutral"}>{schedule.status}</Badge>
-              </div>
-            ))}
+        <div className="space-y-2">
+          <h2 className="text-headline-md text-on-surface">Past visits</h2>
+          <div className="overflow-hidden rounded border border-outline-variant bg-surface-container-lowest">
+            <DataGrid<VisitSchedule>
+              rowData={others}
+              columnDefs={pastColumnDefs}
+              rowHeight={44}
+              headerHeight={40}
+            />
           </div>
         </div>
       )}
