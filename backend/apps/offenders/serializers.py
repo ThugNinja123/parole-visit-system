@@ -43,7 +43,7 @@ class OffenderSerializer(serializers.ModelSerializer):
             "parole_status",
             "risk_level",
             "case_number",
-            "gps_monitor_enabled",
+            # "gps_monitor_enabled",
             "height",
             "weight",
             "eye_color",

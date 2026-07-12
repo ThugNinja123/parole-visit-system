@@ -375,9 +375,9 @@ export function OffenderDetailPage() {
             <Badge tone={riskTone(offender.risk_level)}>{offender.risk_level} risk</Badge>
             <Badge tone="blue">{offender.parole_status}</Badge>
             <span className="text-label-md text-outline">ID: #{offender.case_number || offender.id}</span>
-            {offender.gps_monitor_enabled && (
+            {/* {offender.gps_monitor_enabled && (
               <span className="text-label-md text-outline">Active GPS Monitor</span>
-            )}
+            )} */}
           </div>
           <p className="mt-1 text-body-sm text-on-surface-variant">
             {offender.district_name} / {offender.police_station_name}

@@ -111,13 +111,15 @@ export function DashboardPage() {
           <h2 className="text-headline-md text-on-surface">Flagged visits - review queue</h2>
         </CardHeader>
         <CardBody>
-          <DataGrid<VisitRecord>
-            rowData={flaggedQuery.data?.results ?? []}
-            columnDefs={flaggedColumnDefs}
-            rowHeight={44}
-            headerHeight={40}
-            overlayNoRowsTemplate='<span class="text-body-sm text-on-surface-variant">No flagged visits. Everything checks out.</span>'
-          />
+          <div className="overflow-x-auto">
+            <DataGrid<VisitRecord>
+              rowData={flaggedQuery.data?.results ?? []}
+              columnDefs={flaggedColumnDefs}
+              rowHeight={44}
+              headerHeight={40}
+              overlayNoRowsTemplate='<span class="text-body-sm text-on-surface-variant">No flagged visits. Everything checks out.</span>'
+            />
+          </div>
         </CardBody>
       </Card>
     </div>

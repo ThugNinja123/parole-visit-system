@@ -190,6 +190,46 @@ function ActionsCellRenderer({ data }: ICellRendererParams<Offender>) {
   );
 }
 
+function OffenderMobileCard({ offender }: { offender: Offender }) {
+  const compliance = complianceStatus(offender);
+  const nextVisit = formatNextVisit(offender);
+
+  return (
+    <Link
+      to={`/offenders/${offender.id}`}
+      className="block rounded border border-outline-variant bg-surface-container-lowest p-3 shadow-sm"
+    >
+      <div className="flex items-center gap-3">
+        {offender.offender_image ? (
+          <img
+            src={offender.offender_image}
+            alt=""
+            className="h-10 w-10 shrink-0 rounded-xl border border-outline-variant object-cover"
+          />
+        ) : (
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-outline-variant bg-surface-container font-data text-on-surface-variant">
+            {getInitials(offender.name)}
+          </div>
+        )}
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold text-on-surface">{offender.name}</p>
+          <p className="font-data text-xs text-on-surface-variant">{formatOffenderId(offender.id)}</p>
+        </div>
+      </div>
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <Badge tone={riskTone(offender.risk_level)}>{capitalizeRisk(offender.risk_level)}</Badge>
+        <ComplianceBadge tone={compliance.tone}>{compliance.label}</ComplianceBadge>
+      </div>
+      <p className="mt-2 text-xs text-on-surface-variant">
+        Next visit:{" "}
+        <span className={`font-data ${nextVisit.urgent ? "font-semibold text-error" : "text-on-surface"}`}>
+          {nextVisit.label}
+        </span>
+      </p>
+    </Link>
+  );
+}
+
 export function OffendersListPage() {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
@@ -394,7 +434,17 @@ export function OffendersListPage() {
         )}
       </div>
 
-      <div className="overflow-hidden rounded border border-outline-variant bg-surface-container-lowest shadow-sm">
+      <div className="space-y-3 md:hidden">
+        {results.length === 0 ? (
+          <p className="rounded border border-outline-variant bg-surface-container-lowest p-4 text-body-sm text-outline">
+            {offendersQuery.isLoading ? "Loading offenders..." : "No offenders match these filters."}
+          </p>
+        ) : (
+          results.map((offender) => <OffenderMobileCard key={offender.id} offender={offender} />)
+        )}
+      </div>
+
+      <div className="hidden overflow-hidden rounded border border-outline-variant bg-surface-container-lowest shadow-sm md:block">
         <div className="w-full">
           <DataGrid<Offender>
             rowData={results}
@@ -410,8 +460,9 @@ export function OffendersListPage() {
             }}
           />
         </div>
+      </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-outline-variant bg-background px-4 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded border border-outline-variant bg-background px-4 py-3">
           <p className="text-body-sm text-on-surface-variant">
             {total === 0
               ? "Showing 0 entries"
@@ -440,8 +491,6 @@ export function OffendersListPage() {
             </Button>
           </div>
         </div>
-      </div>
-
       {showCreate && (
         <OffenderFormModal
           onClose={() => setShowCreate(false)}

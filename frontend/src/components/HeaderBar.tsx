@@ -1,4 +1,4 @@
-import { Bell, Search, Settings } from "lucide-react";
+import { Bell, Menu, Search, Settings } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -19,7 +19,7 @@ function OfficerAvatar({ name }: { name: string }) {
   );
 }
 
-export function HeaderBar() {
+export function HeaderBar({ onMenuClick }: { onMenuClick?: () => void }) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
@@ -34,8 +34,18 @@ export function HeaderBar() {
   }
 
   return (
-    <header className="flex shrink-0 items-center justify-between border-b border-outline-variant bg-background px-3 py-2">
-      <form onSubmit={handleSearchSubmit} className="w-full max-w-md">
+    <header className="flex shrink-0 items-center justify-between gap-2 border-b border-outline-variant bg-background px-3 py-2">
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="rounded-xl text-on-surface lg:hidden"
+        aria-label="Open navigation menu"
+        onClick={onMenuClick}
+      >
+        <Menu className="size-5" aria-hidden />
+      </Button>
+      <form onSubmit={handleSearchSubmit} className="min-w-0 flex-1 max-w-md">
         <label className="sr-only" htmlFor="global-search">
           Search by name or ID
         </label>
@@ -52,7 +62,7 @@ export function HeaderBar() {
         </div>
       </form>
 
-      <div className="flex items-center gap-4 pl-4">
+      <div className="flex items-center gap-2 pl-2 sm:gap-4 sm:pl-4">
         <Button
           type="button"
           variant="ghost"

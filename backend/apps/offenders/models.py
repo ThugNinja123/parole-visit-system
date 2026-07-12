@@ -75,9 +75,9 @@ class Offender(TimeStampedModel):
         blank=True,
         help_text="Formal case / tracking ID, e.g. 'P-84729-2'. Falls back to the record ID if blank.",
     )
-    gps_monitor_enabled = models.BooleanField(
-        default=False, help_text="Whether the offender is fitted with an active GPS ankle monitor."
-    )
+    # gps_monitor_enabled = models.BooleanField(
+    #     default=False, help_text="Whether the offender is fitted with an active GPS ankle monitor."
+    # )
     height = models.CharField(max_length=20, blank=True, help_text="Free text, e.g. 6' 1\".")
     weight = models.CharField(max_length=20, blank=True, help_text="Free text, e.g. 195 lbs.")
     eye_color = models.CharField(max_length=10, choices=EyeColor.choices, blank=True)

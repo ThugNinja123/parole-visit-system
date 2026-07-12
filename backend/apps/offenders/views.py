@@ -12,7 +12,7 @@ from apps.geography.models import District, PoliceStation
 
 from .bulk_upload_rules import (
     BULK_UPLOAD_REQUIRED_FIELDS,
-    BULK_UPLOAD_TRUE_VALUES,
+    # BULK_UPLOAD_TRUE_VALUES,
     parse_bulk_upload_dates,
 )
 from .models import Offender, ParoleCondition, ParoleIncident
@@ -123,7 +123,7 @@ class OffenderViewSet(viewsets.ModelViewSet):
                 "longitude": row["longitude"],
                 "parole_status": row.get("parole_status") or "active",
                 "case_number": row.get("case_number", ""),
-                "gps_monitor_enabled": row.get("gps_monitor_enabled", "").lower() in BULK_UPLOAD_TRUE_VALUES,
+                # "gps_monitor_enabled": row.get("gps_monitor_enabled", "").lower() in BULK_UPLOAD_TRUE_VALUES,
                 "height": row.get("height", ""),
                 "weight": row.get("weight", ""),
                 "eye_color": row.get("eye_color", ""),

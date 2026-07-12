@@ -128,25 +128,67 @@ export function MyVisitsPage() {
         </p>
       </div>
 
-      <DataGrid<VisitSchedule>
-        rowData={pending}
-        columnDefs={pendingColumnDefs}
-        context={gridContext}
-        rowHeight={52}
-        headerHeight={40}
-        overlayNoRowsTemplate='<span class="text-sm text-outline">No pending visits assigned to you.</span>'
-      />
+      <div className="hidden md:block">
+        <DataGrid<VisitSchedule>
+          rowData={pending}
+          columnDefs={pendingColumnDefs}
+          context={gridContext}
+          rowHeight={52}
+          headerHeight={40}
+          overlayNoRowsTemplate='<span class="text-sm text-outline">No pending visits assigned to you.</span>'
+        />
+      </div>
+
+      <div className="space-y-3 md:hidden">
+        {pending.length === 0 ? (
+          <p className="rounded border border-outline-variant bg-surface-container-lowest p-4 text-body-sm text-outline">
+            No pending visits assigned to you.
+          </p>
+        ) : (
+          pending.map((schedule) => (
+            <div
+              key={schedule.id}
+              className="rounded border border-outline-variant bg-surface-container-lowest p-3 shadow-sm"
+            >
+              <p className="text-sm font-semibold text-on-surface">{schedule.offender_name}</p>
+              <p className="mt-1 text-xs text-on-surface-variant">
+                Scheduled: {schedule.scheduled_date}
+              </p>
+              {schedule.notes && <p className="mt-1 text-xs text-outline">{schedule.notes}</p>}
+              <Button className="mt-3 w-full" onClick={() => setActiveSchedule(schedule)}>
+                Record visit
+              </Button>
+            </div>
+          ))
+        )}
+      </div>
 
       {others.length > 0 && (
         <div className="space-y-2">
           <h2 className="text-headline-md text-on-surface">Past visits</h2>
-          <div className="overflow-hidden rounded border border-outline-variant bg-surface-container-lowest">
+          <div className="hidden overflow-hidden rounded border border-outline-variant bg-surface-container-lowest md:block">
             <DataGrid<VisitSchedule>
               rowData={others}
               columnDefs={pastColumnDefs}
               rowHeight={44}
               headerHeight={40}
             />
+          </div>
+          <div className="space-y-3 md:hidden">
+            {others.map((schedule) => (
+              <div
+                key={schedule.id}
+                className="flex items-center justify-between gap-3 rounded border border-outline-variant bg-surface-container-lowest p-3 shadow-sm"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-on-surface">
+                    {schedule.offender_name}
+                  </p>
+                  <p className="mt-1 text-xs text-on-surface-variant">{schedule.scheduled_date}</p>
+                </div>
+                <Badge tone={STATUS_TONE[schedule.status]}>{schedule.status}</Badge>
+              </div>
+            ))}
           </div>
         </div>
       )}

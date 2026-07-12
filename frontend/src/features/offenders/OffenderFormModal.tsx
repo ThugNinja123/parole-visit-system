@@ -39,7 +39,7 @@ const emptyForm: OffenderFormValues = {
   risk_level: "low",
   offender_image: null,
   case_number: "",
-  gps_monitor_enabled: false,
+  // gps_monitor_enabled: false,
   height: "",
   weight: "",
   eye_color: "",
@@ -82,7 +82,7 @@ export function OffenderFormModal({
           risk_level: initial.risk_level,
           offender_image: null,
           case_number: initial.case_number,
-          gps_monitor_enabled: initial.gps_monitor_enabled,
+          // gps_monitor_enabled: initial.gps_monitor_enabled,
           height: initial.height,
           weight: initial.weight,
           eye_color: initial.eye_color,
@@ -352,7 +352,7 @@ export function OffenderFormModal({
             />
           </FormField>
 
-          <label className="flex cursor-pointer items-start gap-3 rounded border border-outline-variant bg-surface-container-low p-4">
+          {/* <label className="flex cursor-pointer items-start gap-3 rounded border border-outline-variant bg-surface-container-low p-4">
             <input
               type="checkbox"
               checked={form.gps_monitor_enabled}
@@ -365,7 +365,7 @@ export function OffenderFormModal({
                 Requires daily tracking and signal verification.
               </span>
             </span>
-          </label>
+          </label> */}
 
           <FormField label="Registered address location">
             <LocationPicker

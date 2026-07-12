@@ -98,7 +98,7 @@ export interface Offender {
   parole_status: ParoleStatus;
   risk_level: RiskLevel;
   case_number: string;
-  gps_monitor_enabled: boolean;
+  // gps_monitor_enabled: boolean;
   height: string;
   weight: string;
   eye_color: EyeColor;

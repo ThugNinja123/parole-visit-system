@@ -12,9 +12,9 @@ class OffenderAdmin(admin.ModelAdmin):
         "parole_status",
         "risk_level",
         "case_number",
-        "gps_monitor_enabled",
+        # "gps_monitor_enabled",
     ]
-    list_filter = ["district", "police_station", "parole_status", "risk_level", "gps_monitor_enabled"]
+    list_filter = ["district", "police_station", "parole_status", "risk_level"]  # , "gps_monitor_enabled"
     search_fields = ["name", "aliases", "mobile_no", "case_number"]
 
 
