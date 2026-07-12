@@ -51,7 +51,11 @@ RUN groupadd -r app && useradd -r -g app -d /app -s /usr/sbin/nologin app
 COPY --from=deps /install /usr/local
 COPY . .
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh \
+# Defensive normalization: a Windows checkout (core.autocrlf) can still hand
+# this a CRLF-terminated file even with .gitattributes in place, which
+# corrupts the shebang and makes `exec` fail with "no such file or directory".
+RUN sed -i 's/\r$//' /usr/local/bin/docker-entrypoint.sh \
+    && chmod +x /usr/local/bin/docker-entrypoint.sh \
     && mkdir -p /app/staticfiles /app/media \
     && chown -R app:app /app
 

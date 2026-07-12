@@ -318,7 +318,7 @@ export function OffendersListPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-1">
           <h1 className="text-headline-lg text-on-surface">Offender Directory</h1>
           <p className="text-body-sm text-on-surface-variant">
@@ -327,6 +327,20 @@ export function OffendersListPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          <PermissionGate code="offender.create">
+            <Button variant="secondary" onClick={() => setShowBulkUpload(true)}>
+              Bulk upload
+            </Button>
+          </PermissionGate>
+
+          <PermissionGate code="offender.create">
+            <Button onClick={() => setShowCreate(true)}>+ Register offender</Button>
+          </PermissionGate>
+        </div>
+      </div>
+
+      <div className="rounded border border-outline-variant bg-surface-container-lowest p-4">
+        <div className="flex flex-wrap items-center gap-3">
           <FilterSelect
             label="Risk level filter"
             value={riskLevel}
@@ -361,34 +375,24 @@ export function OffendersListPage() {
             <ListFilter className="h-3.5 w-3.5" aria-hidden />
             More Filters
           </Button>
-
-          <PermissionGate code="offender.create">
-            <Button variant="secondary" onClick={() => setShowBulkUpload(true)}>
-              Bulk upload
-            </Button>
-          </PermissionGate>
-
-          <PermissionGate code="offender.create">
-            <Button onClick={() => setShowCreate(true)}>+ Register offender</Button>
-          </PermissionGate>
         </div>
+
+        {showMoreFilters && (
+          <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-outline-variant pt-3">
+            <FilterSelect
+              label="Parole status filter"
+              value={status}
+              onChange={updateStatus}
+              options={[
+                { value: "", label: "Parole Status: All" },
+                { value: "active", label: "Parole Status: Active" },
+                { value: "completed", label: "Parole Status: Completed" },
+                { value: "absconded", label: "Parole Status: Absconded" },
+              ]}
+            />
+          </div>
+        )}
       </div>
-
-      {showMoreFilters && (
-        <div className="flex flex-wrap items-center gap-3 rounded border border-outline-variant bg-surface-container-lowest p-4">
-          <FilterSelect
-            label="Parole status filter"
-            value={status}
-            onChange={updateStatus}
-            options={[
-              { value: "", label: "Parole Status: All" },
-              { value: "active", label: "Parole Status: Active" },
-              { value: "completed", label: "Parole Status: Completed" },
-              { value: "absconded", label: "Parole Status: Absconded" },
-            ]}
-          />
-        </div>
-      )}
 
       <div className="overflow-hidden rounded border border-outline-variant bg-surface-container-lowest shadow-sm">
         <div className="w-full">

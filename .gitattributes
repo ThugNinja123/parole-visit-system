@@ -1,0 +1,8 @@
+# Force LF for files that get baked into Linux container images and run
+# through a shell interpreter. Without this, Windows checkouts (core.autocrlf)
+# introduce CRLF line endings that break shebangs at `docker build` time
+# (e.g. "exec /usr/local/bin/docker-entrypoint.sh: no such file or directory").
+*.sh text eol=lf
+Dockerfile text eol=lf
+Dockerfile.* text eol=lf
+*.conf text eol=lf
